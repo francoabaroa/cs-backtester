@@ -1,7 +1,6 @@
-// @flow
 const queryString = require('query-string');
 
-function getBacktestData(historicalData: any, profit: number, loss: number, time: number, coinSymbol: string): any {
+function getBacktestData(historicalData, profit, loss, time, coinSymbol) {
   let currentCoinHistoricalData = historicalData;
 
   if (currentCoinHistoricalData.length === 0) {
@@ -58,7 +57,7 @@ function getBacktestData(historicalData: any, profit: number, loss: number, time
   };
 }
 
-function getUrlParams(reqUrl: string): any {
+function getUrlParams(reqUrl) {
   const url = reqUrl.substring(reqUrl.indexOf("?") + 1);
   const parsed = queryString.parse(url);
 
@@ -72,7 +71,7 @@ function getUrlParams(reqUrl: string): any {
   }
 }
 
-function processAlerts(alerts: any, profit: number, loss: number, timeOut: number, includeExchangeFees: boolean): any {
+function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
   let coinResults = [];
   let coinResultsMap = {};
   let totalProfit = 0;
@@ -117,7 +116,7 @@ function processAlerts(alerts: any, profit: number, loss: number, timeOut: numbe
   return backtestResponse;
 }
 
-function findClosestTimestampWithData (startTime: number): any {
+function findClosestTimestampWithData(startTime) {
   var oneDayInSeconds = 86400;
   var sevenDaysInSeconds = 604800;
   var sixDaysInSeconds = sevenDaysInSeconds - oneDayInSeconds;
