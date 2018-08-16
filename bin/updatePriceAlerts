@@ -1,0 +1,175 @@
+#!/usr/bin/env node
+
+const axios = require('axios');
+const CSConstants = require('../constants/CSConstants');
+const mongoose = require('mongoose');
+const PriceAlertModel = require('../PriceAlertModel');
+const request = require('request');
+const utils = require('../utils/utils');
+
+const headers = {
+  'Accept': CSConstants.mimeTypeJson,
+};
+
+const options = {
+  url: CSConstants.googleSheetsApiUrl,
+  headers: headers
+};
+
+mongoose.Promise = Promise;
+mongoose.connect(
+  CSConstants.mongoCSDatabase,
+  {
+    useNewUrlParser: true
+  }
+);
+
+let alertDataObjects = [];
+let successfullyCreated = 0;
+
+Date.prototype.getUnixTime = function() { return this.getTime()/1000|0 };
+if(!Date.now) Date.now = function() { return new Date(); }
+Date.time = function() { return Date.now().getUnixTime(); }
+
+/************************************
+  TODO:
+    - make reusable function logic
+    - add types to function arguments
+    - seperate logic when possible
+************************************/
+
+function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored) {
+  PriceAlertModel.findOne({
+    _id: {
+        symbol: `${symbol}`,
+        startTime,
+    }
+  }, (err, alert) => {
+    if (alert) {
+      console.log(symbol + startTime + CSConstants.alertExists);
+    } else {
+      PriceAlertModel.create({
+        _id: {
+          symbol: `${symbol}`,
+          startTime,
+        },
+        history: historicalData,
+        hoursOfDataStored: hoursOfDataStored,
+        symbol: symbol,
+      }, (err, alert) => {
+          if (err) {
+            console.log(CSConstants.error, err);
+          } else {
+            successfullyCreated++;
+            console.log(CSConstants.numOfRecordsSaved + successfullyCreated);
+          }
+      });
+    }
+  });
+}
+
+function updateDBCollection(symbol, startTime, historicalData, hoursOfDataStored) {
+  let id = {
+    symbol: `${symbol}`,
+    startTime,
+  };
+
+  PriceAlertModel.update({ _id: id }, { $set: { history: historicalData, hoursOfDataStored: hoursOfDataStored}}, updateDBCallback);
+
+  function updateDBCallback(err, numAffected) {
+    if (err) {
+      console.log(CSConstants.error + err);
+    } else {
+      console.log(CSConstants.numOfDocsAffected + numAffected + ' : ' + symbol);
+    }
+  }
+}
+
+function getHourlyHistoricalData(endTime, coinSymbol, limit, callback) {
+  const symbol = coinSymbol.replace(/\s/g, '');
+  const timeLimit = '&limit=' + limit;
+  const ts = '&toTs=' + endTime;
+
+  const apiURL =
+    CSConstants.ccHourlyHistApi +
+    symbol +
+    CSConstants.ccUSDToSymbol +
+    timeLimit +
+    CSConstants.ccAggregate +
+    ts;
+
+  axios.get(apiURL).then(res => {
+    callback(res.data.Data, apiURL);
+  }).catch(function (error) {
+    console.log(CSConstants.axiosError, error);
+  });
+}
+
+function iterateAlertData(alertData, updateAlertData) {
+  for (let i = 0; i < alertData.length; i++) {
+    const coinSymbol = alertData[i][0];
+    const currentAlertTimestamp = alertData[i][1];
+    addToDBCollection(coinSymbol, currentAlertTimestamp, [], 0);
+  }
+  updateAlertData();
+}
+
+function updateAlerts(alerts) {
+  const twoSeconds = 2000;
+  const alertsLength = alerts.length;
+  let i = 0;
+
+  function throttleIteration() {
+    const coinSymbol = alerts[i]._id.symbol;
+    const alertStartTime = alerts[i]._id.startTime;
+    const {endTime, days} = utils.findClosestTimestampWithData(alertStartTime);
+    const daysInHours = days * 24;
+
+    getHourlyHistoricalData(endTime, coinSymbol, daysInHours, (data, apiURL) => {
+      if (data.length && (data[0].high !== 0 && data[0].low !== 0 && data[0].open !== 0 && data[0].close !== 0)) {
+        updateDBCollection(coinSymbol, alertStartTime, data, daysInHours);
+      } else {
+        console.log(CSConstants.dataEmpty + data + apiURL);
+      }
+    });
+    i++;
+    if (i < alertsLength) {
+      setTimeout(throttleIteration, twoSeconds);
+    }
+  }
+  throttleIteration();
+  console.log(CSConstants.done);
+}
+
+function checkAlertDataAndUpdate() {
+  setTimeout(throttleUpdate, 5000);
+  function throttleUpdate() {
+    PriceAlertModel.find( {hoursOfDataStored: { $ne: 168 } }, (err, alerts) => {
+      if (err) {
+        console.log(CSConstants.error, err);
+      } else {
+        updateAlerts(alerts);
+      }
+    });
+  }
+}
+
+function getLatestPriceAlertData(error, response, body) {
+  if (!error && response.statusCode === 200) {
+    const json = JSON.parse(body);
+
+    for (let i = 1; i < json.values.length; i++) {
+      const obj = json.values[i];
+      const symbol = obj[0];
+      const dateTime = obj[1];
+      const startTime = new Date(dateTime).getUnixTime();
+      alertDataObjects.push([symbol, startTime]);
+    }
+    console.log(CSConstants.numOfAlerts, alertDataObjects.length);
+    iterateAlertData(alertDataObjects, checkAlertDataAndUpdate);
+  } else {
+    console.log(CSConstants.noInfoFound);
+  }
+}
+
+request(options, getLatestPriceAlertData);

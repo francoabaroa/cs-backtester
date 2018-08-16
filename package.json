@@ -1,0 +1,32 @@
+{
+  "name": "CS-Backtester",
+  "version": "1.0.0",
+  "description": "",
+  "main": "PriceAlertModel.js",
+  "scripts": {
+    "start": "babel-node AlertServer.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "flow": "flow"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.6.1",
+    "axios": "^0.18.0",
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "googleapis": "^32.0.0",
+    "moment-timezone": "^0.5.21",
+    "mongoose": "^5.2.5",
+    "ololog": "^1.1.110",
+    "path": "^0.12.7",
+    "query-string": "^6.1.0",
+    "request": "^2.87.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-flow": "^6.23.0",
+    "flow-bin": "^0.78.0"
+  }
+}

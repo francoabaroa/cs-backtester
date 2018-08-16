@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+
+const CSConstants = require('../constants/CSConstants');
+const mongoose = require('mongoose');
+const PriceAlertModel = require('../PriceAlertModel');
+const request = require('request');
+
+
+const headers = {'Accept': CSConstants.mimeTypeJson};
+const options = {
+  url: CSConstants.cmcTop100CoinsApi,
+  headers: headers
+};
+
+mongoose.Promise = Promise;
+mongoose.connect(
+  CSConstants.mongoCSDatabase,
+  {
+    useNewUrlParser: true
+  },
+);
+
+function updateRankings(rankings) {
+  PriceAlertModel.find((err, alerts) => {
+    if (err) {
+      console.log(CSConstants.error, err);
+    } else {
+      for (let i = 0; i < alerts.length; i++) {
+        const symbol = alerts[i]._id.symbol;
+        const rank = rankings[symbol] ? rankings[symbol] : null;
+        const id = {
+          symbol: `${symbol}`,
+          startTime: alerts[i]._id.startTime,
+        };
+        PriceAlertModel.update({ _id: id }, { $set: {lastRank: rank}}, () => {});
+      }
+    }
+  });
+  console.log(CSConstants.done);
+}
+
+function getCurrentRankings(error, response, body) {
+  if (!error && response.statusCode === 200) {
+    const json = JSON.parse(body);
+    let rankingsMap = {};
+
+    for (let i = 0; i < json.data.length; i++) {
+      const currentCoin = json.data[i];
+      const currentCoinSymbol = currentCoin.symbol;
+      if (!rankingsMap[currentCoinSymbol]) {
+        rankingsMap[currentCoinSymbol] = currentCoin.rank;
+      }
+    }
+    updateRankings(rankingsMap);
+  } else {
+    console.log(CSConstants.noRankingsFound);
+  }
+}
+
+request(options, getCurrentRankings);
