@@ -68,10 +68,11 @@ function getUrlParams(reqUrl: string): any {
     timeOut: parseFloat(parsed.timeOut),
     top: parseFloat(parsed.top),
     coins: parsed.coins,
+    includeFees: parsed.includeFees,
   }
 }
 
-function processAlerts(alerts: any, profit: number, loss: number, timeOut: number): any {
+function processAlerts(alerts: any, profit: number, loss: number, timeOut: number, includeExchangeFees: boolean): any {
   let coinResults = [];
   let coinResultsMap = {};
   let totalProfit = 0;
@@ -81,12 +82,21 @@ function processAlerts(alerts: any, profit: number, loss: number, timeOut: numbe
     const alertStartTime = alerts[i]._id.startTime;
     const coinResult = [coinSymbol, alertStartTime];
     const historicalData = alerts[i].history ? alerts[i].history : [];
+    const exchangeFee = 0.004;
 
     if (historicalData) {
       const output = getBacktestData(historicalData, profit, loss, timeOut, coinSymbol);
       if (output && !isNaN(output.profit) && !(coinResultsMap[coinSymbol + alertStartTime])) {
+        let finalProfit = null;
+
+        if (includeExchangeFees === true) {
+          finalProfit = parseFloat(output.profit - exchangeFee);
+        } else {
+          finalProfit = output.profit;
+        }
+
         coinResultsMap[coinSymbol + alertStartTime] = coinSymbol;
-        coinResult.push(output.profit);
+        coinResult.push(finalProfit);
         coinResult.push(output.duration);
         coinResults.push(coinResult);
       }
