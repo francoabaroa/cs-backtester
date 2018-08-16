@@ -73,17 +73,19 @@ function getUrlParams(reqUrl: string): any {
 
 function processAlerts(alerts: any, profit: number, loss: number, timeOut: number): any {
   let coinResults = [];
+  let coinResultsMap = {};
   let totalProfit = 0;
 
   for (let i = 0; i < alerts.length; i++) {
-    const coinSymbol = alerts[i]._id.symbol;
+    const coinSymbol = alerts[i]._id.symbol.trim();
     const alertStartTime = alerts[i]._id.startTime;
     const coinResult = [coinSymbol, alertStartTime];
     const historicalData = alerts[i].history ? alerts[i].history : [];
 
     if (historicalData) {
       const output = getBacktestData(historicalData, profit, loss, timeOut, coinSymbol);
-      if (output && !isNaN(output.profit)) {
+      if (output && !isNaN(output.profit) && !(coinResultsMap[coinSymbol + alertStartTime])) {
+        coinResultsMap[coinSymbol + alertStartTime] = coinSymbol;
         coinResult.push(output.profit);
         coinResult.push(output.duration);
         coinResults.push(coinResult);
@@ -97,7 +99,12 @@ function processAlerts(alerts: any, profit: number, loss: number, timeOut: numbe
 
   totalProfit -= coinResults.length;
   const totalProfitPercentage = parseFloat(totalProfit * 100).toFixed(2);
-  return coinResults.length !== 0 ? totalProfitPercentage : 'No Data';
+  const backtestResponse = {
+    totalProfit: coinResults.length !== 0 ? totalProfitPercentage : 'No Data',
+    results: coinResults,
+  };
+
+  return backtestResponse;
 }
 
 function findClosestTimestampWithData (startTime: number): any {
