@@ -9,6 +9,7 @@ const PriceAlertSchema = new Schema({
   hoursOfDataStored: Number,
   symbol: String,
   lastRank: { type: Number, default: null },
+  startTime: Number,
 });
 
 module.exports = mongoose.model('PriceAlert', PriceAlertSchema);

@@ -56,6 +56,7 @@ function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored)
         history: historicalData,
         hoursOfDataStored: hoursOfDataStored,
         symbol: symbol,
+        startTime: startTime,
       }, (err, alert) => {
           if (err) {
             console.log(CSConstants.error, err);
@@ -74,7 +75,7 @@ function updateDBCollection(symbol, startTime, historicalData, hoursOfDataStored
     startTime,
   };
 
-  PriceAlertModel.update({ _id: id }, { $set: { history: historicalData, hoursOfDataStored: hoursOfDataStored}}, updateDBCallback);
+  PriceAlertModel.update({ _id: id }, { $set: { history: historicalData, hoursOfDataStored: hoursOfDataStored, startTime: startTime}}, updateDBCallback);
 
   function updateDBCallback(err, numAffected) {
     if (err) {
