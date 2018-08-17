@@ -38,7 +38,7 @@ Date.time = function() { return Date.now().getUnixTime(); }
     - seperate logic when possible
 ************************************/
 
-function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored) {
+function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored, alertId) {
   PriceAlertModel.findOne({
     _id: {
         symbol: `${symbol}`,
@@ -57,6 +57,8 @@ function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored)
         hoursOfDataStored: hoursOfDataStored,
         symbol: symbol,
         startTime: startTime,
+        storedDataApiUrl: null,
+        alertId: alertId,
       }, (err, alert) => {
           if (err) {
             console.log(CSConstants.error, err);
@@ -69,13 +71,13 @@ function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored)
   });
 }
 
-function updateDBCollection(symbol, startTime, historicalData, hoursOfDataStored) {
+function updateDBCollection(symbol, startTime, historicalData, hoursOfDataStored, apiUrl) {
   let id = {
     symbol: `${symbol}`,
     startTime,
   };
 
-  PriceAlertModel.update({ _id: id }, { $set: { history: historicalData, hoursOfDataStored: hoursOfDataStored, startTime: startTime}}, updateDBCallback);
+  PriceAlertModel.update({ _id: id }, { $set: { history: historicalData, hoursOfDataStored: hoursOfDataStored, startTime: startTime, storedDataApiUrl: apiUrl}}, updateDBCallback);
 
   function updateDBCallback(err, numAffected) {
     if (err) {
@@ -110,7 +112,8 @@ function iterateAlertData(alertData, updateAlertData) {
   for (let i = 0; i < alertData.length; i++) {
     const coinSymbol = alertData[i][0];
     const currentAlertTimestamp = alertData[i][1];
-    addToDBCollection(coinSymbol, currentAlertTimestamp, [], 0);
+    const currentAlertId = alertData[i][2];
+    addToDBCollection(coinSymbol, currentAlertTimestamp, [], 0, currentAlertId);
   }
   updateAlertData();
 }
@@ -128,7 +131,7 @@ function updateAlerts(alerts) {
 
     getHourlyHistoricalData(endTime, coinSymbol, daysInHours, (data, apiURL) => {
       if (data.length && (data[0].high !== 0 && data[0].low !== 0 && data[0].open !== 0 && data[0].close !== 0)) {
-        updateDBCollection(coinSymbol, alertStartTime, data, daysInHours);
+        updateDBCollection(coinSymbol, alertStartTime, data, daysInHours, apiURL);
       } else {
         console.log(CSConstants.dataEmpty + data + apiURL);
       }
@@ -163,8 +166,9 @@ function getLatestPriceAlertData(error, response, body) {
       const obj = json.values[i];
       const symbol = obj[0];
       const dateTime = obj[1];
+      const alertId = obj[2];
       const startTime = new Date(dateTime).getUnixTime();
-      alertDataObjects.push([symbol, startTime]);
+      alertDataObjects.push([symbol, startTime, alertId]);
     }
     console.log(CSConstants.numOfAlerts, alertDataObjects.length);
     iterateAlertData(alertDataObjects, checkAlertDataAndUpdate);
