@@ -68,6 +68,8 @@ function getUrlParams(reqUrl) {
     top: parseFloat(parsed.top),
     coins: parsed.coins,
     includeFees: parsed.includeFees,
+    start: parseInt(parsed.start),
+    end: parseInt(parsed.end),
   }
 }
 

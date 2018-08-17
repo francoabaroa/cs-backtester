@@ -29,7 +29,7 @@ app.get('/alerts', (req, res) => {
 });
 
 app.get('/backtest', (req, res) => {
-  const {loss, profit, timeOut, top, coins, includeFees} = utils.getUrlParams(req.originalUrl);
+  const {loss, profit, timeOut, top, coins, includeFees, start, end} = utils.getUrlParams(req.originalUrl);
   let query = {};
   let selectedCoins = coins ? JSON.parse(coins) : null;
   let includeExchangeFees = includeFees === 'true' ? true : false;
@@ -40,6 +40,10 @@ app.get('/backtest', (req, res) => {
     query = { hoursOfDataStored: { $gte: timeOut}, symbol: { $in: selectedCoins } };
   } else {
     query = { hoursOfDataStored: { $gte: timeOut} };
+  }
+
+  if (!isNaN(start) && !isNaN(end)) {
+    query.startTime = { $gte: start, $lte: end };
   }
 
   PriceAlertModel.find(query, (err, alerts) => {
