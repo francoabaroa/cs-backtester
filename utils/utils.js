@@ -99,6 +99,7 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
         coinResultsMap[coinSymbol + alertStartTime] = coinSymbol;
         coinResult.push(finalProfit);
         coinResult.push(output.duration);
+        coinResult.push(output);
         coinResults.push(coinResult);
       }
     }
