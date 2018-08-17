@@ -1,6 +1,6 @@
 const queryString = require('query-string');
 
-function getBacktestData(historicalData, profit, loss, time, coinSymbol) {
+function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRankId) {
   let currentCoinHistoricalData = historicalData;
 
   if (currentCoinHistoricalData.length === 0) {
@@ -54,6 +54,7 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol) {
     symbol: coinSymbol,
     sellPrice,
     buyPrice,
+    alertRankId,
   };
 }
 
@@ -81,12 +82,13 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
   for (let i = 0; i < alerts.length; i++) {
     const coinSymbol = alerts[i]._id.symbol.trim();
     const alertStartTime = alerts[i]._id.startTime;
+    const alertRankId = alerts[i].alertId;
     const coinResult = [coinSymbol, alertStartTime];
     const historicalData = alerts[i].history ? alerts[i].history : [];
     const exchangeFee = 0.004;
 
     if (historicalData) {
-      const output = getBacktestData(historicalData, profit, loss, timeOut, coinSymbol);
+      const output = getBacktestData(historicalData, profit, loss, timeOut, coinSymbol, alertRankId);
       if (output && !isNaN(output.profit) && !(coinResultsMap[coinSymbol + alertStartTime])) {
         let finalProfit = null;
 
