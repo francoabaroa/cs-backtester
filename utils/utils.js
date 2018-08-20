@@ -98,9 +98,9 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees, conve
 
     let historicalData = null;
 
-    if (convertTo.toLowerCase() === 'btc') {
+    if (typeof convertTo === 'string' && convertTo.toLowerCase() === 'btc') {
       historicalData = alerts[i].history[0].btc ? alerts[i].history[0].btc : [];
-    } else if (convertTo.toLowerCase() === 'usd') {
+    } else if (typeof convertTo === 'string' && convertTo.toLowerCase() === 'usd') {
       historicalData = alerts[i].history[0].usd ? alerts[i].history[0].usd : [];
     }
 
