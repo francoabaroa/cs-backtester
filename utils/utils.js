@@ -8,11 +8,13 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
   }
 
   let buyPrice = currentCoinHistoricalData[0].open;
+  let buyTime = currentCoinHistoricalData[0].time;
   let profitTake = (parseFloat(profit)/100);
   let gainThreshold = (profitTake + 1) * parseFloat(buyPrice);
   let stopLoss = (parseFloat(loss)/100);
   let lossThreshold = (1 - stopLoss) * parseFloat(buyPrice);
   let sellPrice = -1;
+  let sellTime = -1;
   let duration = -1;
   let adjustedTime = time - 1;
 
@@ -31,13 +33,16 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
     }
     if (profitHit) {
       sellPrice = gainThreshold;
+      sellTime = currentCoinHistoricalData[j].time;
     }
     if (lossHit) {
       sellPrice = lossThreshold;
+      sellTime = currentCoinHistoricalData[j].time;
     }
     if (profitHit && lossHit) {
       // TODO: what to do if both hit in the same hour?
       sellPrice = buyPrice;
+      sellTime = currentCoinHistoricalData[j].time;
     }
     if (lossHit || profitHit) {
       duration = j + 1;
@@ -46,6 +51,7 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
     if (j === adjustedTime) {
       duration = time;
       sellPrice = closePrice;
+      sellTime = currentCoinHistoricalData[j].time;
     }
   }
   return {
@@ -55,6 +61,8 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
     sellPrice,
     buyPrice,
     alertRankId,
+    sellTime,
+    buyTime,
   };
 }
 
