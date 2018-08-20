@@ -79,6 +79,7 @@ function getUrlParams(reqUrl) {
     includeFees: parsed.includeFees,
     start: parseInt(parsed.start),
     end: parseInt(parsed.end),
+    timeDelay: parseInt(parsed.timeDelay),
   }
 }
 

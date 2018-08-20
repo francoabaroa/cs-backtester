@@ -3,6 +3,7 @@ module.exports = {
   axiosError: 'Error with Axios: ',
   ccAggregate: '&aggregate=1',
   ccHourlyHistApi: 'https://min-api.cryptocompare.com/data/histohour?fsym=',
+  ccBTCToSymbol: '&tsym=BTC',
   ccUSDToSymbol: '&tsym=USD',
   cmcTop100CoinsApi: 'https://api.coinmarketcap.com/v2/ticker/?limit=100&structure=array',
   dataEmpty: 'Data coming back empty: ',

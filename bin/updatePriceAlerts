@@ -92,11 +92,18 @@ function getHourlyHistoricalData(endTime, coinSymbol, limit, callback) {
   const symbol = coinSymbol.replace(/\s/g, '');
   const timeLimit = '&limit=' + limit;
   const ts = '&toTs=' + endTime;
+  let conversionCurrencyParameter = null;
+
+  if (symbol === 'BTC') {
+    conversionCurrencyParameter = CSConstants.ccUSDToSymbol;
+  } else {
+    conversionCurrencyParameter = CSConstants.ccBTCToSymbol;
+  }
 
   const apiURL =
     CSConstants.ccHourlyHistApi +
     symbol +
-    CSConstants.ccUSDToSymbol +
+    conversionCurrencyParameter +
     timeLimit +
     CSConstants.ccAggregate +
     ts;
@@ -163,10 +170,10 @@ function getLatestPriceAlertData(error, response, body) {
     const json = JSON.parse(body);
 
     for (let i = 1; i < json.values.length; i++) {
-      const obj = json.values[i];
-      const symbol = obj[0];
-      const dateTime = obj[1];
-      const alertId = obj[2];
+      const row = json.values[i];
+      const symbol = row[0];
+      const dateTime = row[1];
+      const alertId = row[2];
       const startTime = new Date(dateTime).getUnixTime();
       alertDataObjects.push([symbol, startTime, alertId]);
     }
