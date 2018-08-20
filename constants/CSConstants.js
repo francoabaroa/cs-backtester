@@ -19,4 +19,5 @@ module.exports = {
   numOfDocsAffected: '# of affected docs: ',
   numOfRecordsSaved: 'Number of records successfully saved: ',
   USD: 'USD',
+  validHistory: 'Valid BTC history & USD history: ',
 };

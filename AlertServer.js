@@ -29,7 +29,7 @@ app.get('/alerts', (req, res) => {
 });
 
 app.get('/backtest', (req, res) => {
-  const {loss, profit, timeOut, top, coins, includeFees, start, end, timeDelay} = utils.getUrlParams(req.originalUrl);
+  const {loss, profit, timeOut, top, coins, includeFees, start, end, timeDelay, convertTo} = utils.getUrlParams(req.originalUrl);
   let query = {};
   let selectedCoins = coins ? JSON.parse(coins) : null;
   let includeExchangeFees = includeFees === 'true' ? true : false;
@@ -50,7 +50,7 @@ app.get('/backtest', (req, res) => {
     if (err) {
       res.send(err);
     } else {
-      res.send(utils.processAlerts(alerts, profit, loss, timeOut, includeExchangeFees));
+      res.send(utils.processAlerts(alerts, profit, loss, timeOut, includeExchangeFees, convertTo));
     }
   });
 });

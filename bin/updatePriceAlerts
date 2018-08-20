@@ -88,31 +88,64 @@ function updateDBCollection(symbol, startTime, historicalData, hoursOfDataStored
   }
 }
 
+function hasValidData(data) {
+  return (data[0].high !== 0 && data[0].low !== 0 && data[0].open !== 0 && data[0].close !== 0);
+}
+
 function getHourlyHistoricalData(endTime, coinSymbol, limit, callback) {
   const symbol = coinSymbol.replace(/\s/g, '');
   const timeLimit = '&limit=' + limit;
   const ts = '&toTs=' + endTime;
-  let conversionCurrencyParameter = null;
+  const historicalData = {};
 
-  if (symbol === 'BTC') {
-    conversionCurrencyParameter = CSConstants.ccUSDToSymbol;
-  } else {
-    conversionCurrencyParameter = CSConstants.ccBTCToSymbol;
-  }
-
-  const apiURL =
+  const usdConversionUrl =
     CSConstants.ccHourlyHistApi +
     symbol +
-    conversionCurrencyParameter +
+    CSConstants.ccUSDToSymbol +
     timeLimit +
     CSConstants.ccAggregate +
     ts;
 
-  axios.get(apiURL).then(res => {
-    callback(res.data.Data, apiURL);
-  }).catch(function (error) {
-    console.log(CSConstants.axiosError, error);
-  });
+  const btcConversionUrl =
+    CSConstants.ccHourlyHistApi +
+    symbol +
+    CSConstants.ccBTCToSymbol +
+    timeLimit +
+    CSConstants.ccAggregate +
+    ts;
+
+  if (symbol === 'BTC') {
+    axios.get(usdConversionUrl).then(res => {
+      if (res.data.Data.length > 0) {
+        historicalData['btc'] = res.data.Data;
+        historicalData['usd'] = res.data.Data;
+        console.log(CSConstants.validHistory + symbol);
+      }
+      callback(historicalData, usdConversionUrl);
+    }).catch(function (error) {
+      console.log(CSConstants.axiosError, error);
+    });
+  } else {
+    axios.get(btcConversionUrl).then(btcResponse => {
+      axios.get(usdConversionUrl).then(usdResponse => {
+        let btcData = btcResponse.data.Data;
+        let usdData = usdResponse.data.Data;
+
+        if (btcData.length > 0 && usdData.length > 0) {
+          if ((hasValidData(btcData)) && (hasValidData(usdData))) {
+            historicalData['btc'] = btcData;
+            historicalData['usd'] = usdData;
+            console.log(CSConstants.validHistory + symbol);
+          }
+        }
+        callback(historicalData, usdConversionUrl);
+      }).catch(function (error) {
+        console.log(CSConstants.axiosError, error);
+      });
+    }).catch(function (error) {
+      console.log(CSConstants.axiosError, error);
+    });
+  }
 }
 
 function iterateAlertData(alertData, updateAlertData) {
@@ -137,7 +170,7 @@ function updateAlerts(alerts) {
     const daysInHours = days * 24;
 
     getHourlyHistoricalData(endTime, coinSymbol, daysInHours, (data, apiURL) => {
-      if (data.length && (data[0].high !== 0 && data[0].low !== 0 && data[0].open !== 0 && data[0].close !== 0)) {
+      if (data.btc && data.usd) {
         updateDBCollection(coinSymbol, alertStartTime, data, daysInHours, apiURL);
       } else {
         console.log(CSConstants.dataEmpty + data + apiURL);
@@ -158,7 +191,7 @@ function checkAlertDataAndUpdate() {
     PriceAlertModel.find( {hoursOfDataStored: { $ne: 168 } }, (err, alerts) => {
       if (err) {
         console.log(CSConstants.error, err);
-      } else {
+      } else if (alerts.length > 0) {
         updateAlerts(alerts);
       }
     });

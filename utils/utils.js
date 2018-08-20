@@ -80,10 +80,11 @@ function getUrlParams(reqUrl) {
     start: parseInt(parsed.start),
     end: parseInt(parsed.end),
     timeDelay: parseInt(parsed.timeDelay),
+    convertTo: parsed.convertTo,
   }
 }
 
-function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
+function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees, convertTo) {
   let coinResults = [];
   let coinResultsMap = {};
   let totalProfit = 0;
@@ -93,8 +94,15 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
     const alertStartTime = alerts[i]._id.startTime;
     const alertRankId = alerts[i].alertId;
     const coinResult = [coinSymbol, alertStartTime];
-    const historicalData = alerts[i].history ? alerts[i].history : [];
     const exchangeFee = 0.004;
+
+    let historicalData = null;
+
+    if (convertTo.toLowerCase() === 'btc') {
+      historicalData = alerts[i].history[0].btc ? alerts[i].history[0].btc : [];
+    } else if (convertTo.toLowerCase() === 'usd') {
+      historicalData = alerts[i].history[0].usd ? alerts[i].history[0].usd : [];
+    }
 
     if (historicalData) {
       const output = getBacktestData(historicalData, profit, loss, timeOut, coinSymbol, alertRankId);
