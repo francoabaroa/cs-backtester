@@ -7,7 +7,7 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
     return null;
   }
 
-  let buyPrice = currentCoinHistoricalData[0].open;
+  let buyPrice = parseFloat(currentCoinHistoricalData[0].open);
   let buyTime = currentCoinHistoricalData[0].time;
   let profitTake = (parseFloat(profit)/100);
   let gainThreshold = (profitTake + 1) * parseFloat(buyPrice);
@@ -32,16 +32,16 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
       lossHit = true;
     }
     if (profitHit) {
-      sellPrice = gainThreshold;
+      sellPrice = parseFloat(gainThreshold);
       sellTime = currentCoinHistoricalData[j].time;
     }
     if (lossHit) {
-      sellPrice = lossThreshold;
+      sellPrice = parseFloat(lossThreshold);
       sellTime = currentCoinHistoricalData[j].time;
     }
     if (profitHit && lossHit) {
       // TODO: what to do if both hit in the same hour?
-      sellPrice = buyPrice;
+      sellPrice = parseFloat(buyPrice);
       sellTime = currentCoinHistoricalData[j].time;
     }
     if (lossHit || profitHit) {
@@ -50,10 +50,11 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
     }
     if (j === adjustedTime) {
       duration = time;
-      sellPrice = closePrice;
+      sellPrice = parseFloat(closePrice);
       sellTime = currentCoinHistoricalData[j].time;
     }
   }
+
   return {
     profit: (sellPrice/buyPrice),
     duration,
@@ -80,33 +81,67 @@ function getUrlParams(reqUrl) {
     start: parseInt(parsed.start),
     end: parseInt(parsed.end),
     timeDelay: parseInt(parsed.timeDelay),
-    convertTo: parsed.convertTo,
   }
 }
 
-function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees, convertTo) {
-  let coinResults = [];
-  let coinResultsMap = {};
-  let totalProfit = 0;
+function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
+  // let coinResults = [];
+  // let coinResultsMap = {};
+  // let totalProfit = 0;
+
+  let btcResults = [];
+  let btcResultsMap = {};
+  let btcTotalProfit = 0;
+  let usdResults = [];
+  let usdResultsMap = {};
+  let usdTotalProfit = 0;
+
 
   for (let i = 0; i < alerts.length; i++) {
     const coinSymbol = alerts[i]._id.symbol.trim();
     const alertStartTime = alerts[i]._id.startTime;
     const alertRankId = alerts[i].alertId;
-    const coinResult = [coinSymbol, alertStartTime];
+
+    // const coinResult = [coinSymbol, alertStartTime];
+
+    const btcCoinResult = [coinSymbol, alertStartTime];
+    const usdCoinResult = [coinSymbol, alertStartTime];
+
     const exchangeFee = 0.004;
 
-    let historicalData = null;
+    // let historicalData = null;
 
-    if (typeof convertTo === 'string' && convertTo.toLowerCase() === 'btc') {
-      historicalData = alerts[i].history[0].btc ? alerts[i].history[0].btc : [];
-    } else if (typeof convertTo === 'string' && convertTo.toLowerCase() === 'usd') {
-      historicalData = alerts[i].history[0].usd ? alerts[i].history[0].usd : [];
-    }
+    // if (typeof convertTo === 'string' && convertTo.toLowerCase() === 'btc') {
+    //   historicalData = alerts[i].history[0].btc ? alerts[i].history[0].btc : [];
+    // } else if (typeof convertTo === 'string' && convertTo.toLowerCase() === 'usd') {
+    //   historicalData = alerts[i].history[0].usd ? alerts[i].history[0].usd : [];
+    // }
 
-    if (historicalData) {
-      const output = getBacktestData(historicalData, profit, loss, timeOut, coinSymbol, alertRankId);
-      if (output && !isNaN(output.profit) && !(coinResultsMap[coinSymbol + alertStartTime])) {
+    let btcHistoricalData = alerts[i].history[0].btc ? alerts[i].history[0].btc : [];
+    let usdHistoricalData = alerts[i].history[0].usd ? alerts[i].history[0].usd : [];
+
+    // if (historicalData) {
+    //   const output = getBacktestData(historicalData, profit, loss, timeOut, coinSymbol, alertRankId);
+    //   if (output && !isNaN(output.profit) && !(coinResultsMap[coinSymbol + alertStartTime])) {
+    //     let finalProfit = null;
+
+    //     if (includeExchangeFees === true) {
+    //       finalProfit = parseFloat(output.profit - exchangeFee);
+    //     } else {
+    //       finalProfit = output.profit;
+    //     }
+
+    //     coinResultsMap[coinSymbol + alertStartTime] = coinSymbol;
+    //     coinResult.push(finalProfit);
+    //     coinResult.push(output.duration);
+    //     coinResult.push(output);
+    //     coinResults.push(coinResult);
+    //   }
+    // }
+
+    if (btcHistoricalData) {
+      const output = getBacktestData(btcHistoricalData, profit, loss, timeOut, coinSymbol, alertRankId);
+      if (output && !isNaN(output.profit) && !(btcResultsMap[coinSymbol + alertStartTime])) {
         let finalProfit = null;
 
         if (includeExchangeFees === true) {
@@ -115,24 +150,57 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees, conve
           finalProfit = output.profit;
         }
 
-        coinResultsMap[coinSymbol + alertStartTime] = coinSymbol;
-        coinResult.push(finalProfit);
-        coinResult.push(output.duration);
-        coinResult.push(output);
-        coinResults.push(coinResult);
+        btcResultsMap[coinSymbol + alertStartTime] = coinSymbol;
+        btcCoinResult.push(finalProfit);
+        btcCoinResult.push(output.duration);
+        btcCoinResult.push(output);
+        btcResults.push(btcCoinResult);
+      }
+    }
+
+    if (usdHistoricalData) {
+      const output = getBacktestData(usdHistoricalData, profit, loss, timeOut, coinSymbol, alertRankId);
+      if (output && !isNaN(output.profit) && !(usdResultsMap[coinSymbol + alertStartTime])) {
+        let finalProfit = null;
+
+        if (includeExchangeFees === true) {
+          finalProfit = parseFloat(output.profit - exchangeFee);
+        } else {
+          finalProfit = output.profit;
+        }
+
+        usdResultsMap[coinSymbol + alertStartTime] = coinSymbol;
+        usdCoinResult.push(finalProfit);
+        usdCoinResult.push(output.duration);
+        usdCoinResult.push(output);
+        usdResults.push(usdCoinResult);
       }
     }
   }
 
-  for (let j = 0; j < coinResults.length; j++) {
-    totalProfit += coinResults[j][2];
+  for (let j = 0; j < btcResults.length; j++) {
+    btcTotalProfit += btcResults[j][2];
   }
 
-  totalProfit -= coinResults.length;
-  const totalProfitPercentage = parseFloat(totalProfit * 100).toFixed(2);
+  for (let j = 0; j < usdResults.length; j++) {
+    usdTotalProfit += usdResults[j][2];
+  }
+
+  btcTotalProfit -= btcResults.length;
+  usdTotalProfit -= usdResults.length;
+
+  // const totalProfitPercentage = parseFloat(totalProfit * 100).toFixed(2);
+
+  const btcTotalProfitPercentage = parseFloat(btcTotalProfit * 100).toFixed(2);
+  const usdTotalProfitPercentage = parseFloat(usdTotalProfit * 100).toFixed(2);
+
   const backtestResponse = {
-    totalProfit: coinResults.length !== 0 ? totalProfitPercentage : 'No Data',
-    results: coinResults,
+    // totalProfit: coinResults.length !== 0 ? totalProfitPercentage : 'No Data',
+    // results: coinResults,
+    btcTotalProfit: btcResults.length !== 0 ? btcTotalProfitPercentage : 'No Data',
+    btcResults,
+    usdTotalProfit: usdResults.length !== 0 ? usdTotalProfitPercentage : 'No Data',
+    usdResults,
   };
 
   return backtestResponse;
