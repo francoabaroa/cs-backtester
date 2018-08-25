@@ -85,10 +85,6 @@ function getUrlParams(reqUrl) {
 }
 
 function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
-  // let coinResults = [];
-  // let coinResultsMap = {};
-  // let totalProfit = 0;
-
   let btcResults = [];
   let btcResultsMap = {};
   let btcTotalProfit = 0;
@@ -101,43 +97,13 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
     const coinSymbol = alerts[i]._id.symbol.trim();
     const alertStartTime = alerts[i]._id.startTime;
     const alertRankId = alerts[i].alertId;
-
-    // const coinResult = [coinSymbol, alertStartTime];
-
     const btcCoinResult = [coinSymbol, alertStartTime];
     const usdCoinResult = [coinSymbol, alertStartTime];
 
     const exchangeFee = 0.004;
 
-    // let historicalData = null;
-
-    // if (typeof convertTo === 'string' && convertTo.toLowerCase() === 'btc') {
-    //   historicalData = alerts[i].history[0].btc ? alerts[i].history[0].btc : [];
-    // } else if (typeof convertTo === 'string' && convertTo.toLowerCase() === 'usd') {
-    //   historicalData = alerts[i].history[0].usd ? alerts[i].history[0].usd : [];
-    // }
-
     let btcHistoricalData = alerts[i].history[0].btc ? alerts[i].history[0].btc : [];
     let usdHistoricalData = alerts[i].history[0].usd ? alerts[i].history[0].usd : [];
-
-    // if (historicalData) {
-    //   const output = getBacktestData(historicalData, profit, loss, timeOut, coinSymbol, alertRankId);
-    //   if (output && !isNaN(output.profit) && !(coinResultsMap[coinSymbol + alertStartTime])) {
-    //     let finalProfit = null;
-
-    //     if (includeExchangeFees === true) {
-    //       finalProfit = parseFloat(output.profit - exchangeFee);
-    //     } else {
-    //       finalProfit = output.profit;
-    //     }
-
-    //     coinResultsMap[coinSymbol + alertStartTime] = coinSymbol;
-    //     coinResult.push(finalProfit);
-    //     coinResult.push(output.duration);
-    //     coinResult.push(output);
-    //     coinResults.push(coinResult);
-    //   }
-    // }
 
     if (btcHistoricalData) {
       const output = getBacktestData(btcHistoricalData, profit, loss, timeOut, coinSymbol, alertRankId);
@@ -188,15 +154,9 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
 
   btcTotalProfit -= btcResults.length;
   usdTotalProfit -= usdResults.length;
-
-  // const totalProfitPercentage = parseFloat(totalProfit * 100).toFixed(2);
-
   const btcTotalProfitPercentage = parseFloat(btcTotalProfit * 100).toFixed(2);
   const usdTotalProfitPercentage = parseFloat(usdTotalProfit * 100).toFixed(2);
-
   const backtestResponse = {
-    // totalProfit: coinResults.length !== 0 ? totalProfitPercentage : 'No Data',
-    // results: coinResults,
     btcTotalProfit: btcResults.length !== 0 ? btcTotalProfitPercentage : 'No Data',
     btcResults,
     usdTotalProfit: usdResults.length !== 0 ? usdTotalProfitPercentage : 'No Data',
