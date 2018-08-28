@@ -12,6 +12,8 @@ const PriceAlertSchema = new Schema({
   startTime: Number,
   storedDataApiUrl: { type: String, default: null },
   alertId: Number,
+  btcPriceAtAlertTime: Number,
+  usdPriceAtAlertTime: Number,
 });
 
 module.exports = mongoose.model('PriceAlert', PriceAlertSchema);
