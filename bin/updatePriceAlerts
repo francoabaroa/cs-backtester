@@ -3,7 +3,7 @@
 const axios = require('axios');
 const CSConstants = require('../constants/CSConstants');
 const mongoose = require('mongoose');
-const PriceAlertModel = require('../PriceAlertModel');
+const PriceAlertModel = require('../models/PriceAlertModel');
 const request = require('request');
 const utils = require('../utils/utils');
 
@@ -47,6 +47,9 @@ function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored,
   }, (err, alert) => {
     if (alert) {
       console.log(symbol + startTime + CSConstants.alertExists);
+      alert.btcPriceAtAlertTime = 0;
+      alert.usdPriceAtAlertTime = 0;
+      alert.save();
     } else {
       PriceAlertModel.create({
         _id: {
@@ -59,6 +62,8 @@ function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored,
         startTime: startTime,
         storedDataApiUrl: null,
         alertId: alertId,
+        btcPriceAtAlertTime: 0,
+        usdPriceAtAlertTime: 0,
       }, (err, alert) => {
           if (err) {
             console.log(CSConstants.error, err);
@@ -72,12 +77,14 @@ function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored,
 }
 
 function updateDBCollection(symbol, startTime, historicalData, hoursOfDataStored, apiUrl) {
+  let alertTimePriceBTC = historicalData['btc'][0].open;
+  let alertTimePriceUSD = historicalData['usd'][0].open;
   let id = {
     symbol: `${symbol}`,
     startTime,
   };
 
-  PriceAlertModel.update({ _id: id }, { $set: { history: historicalData, hoursOfDataStored: hoursOfDataStored, startTime: startTime, storedDataApiUrl: apiUrl}}, updateDBCallback);
+  PriceAlertModel.update({ _id: id }, { $set: { history: historicalData, hoursOfDataStored: hoursOfDataStored, startTime: startTime, storedDataApiUrl: apiUrl, btcPriceAtAlertTime: alertTimePriceBTC, usdPriceAtAlertTime: alertTimePriceUSD}}, updateDBCallback);
 
   function updateDBCallback(err, numAffected) {
     if (err) {
@@ -188,7 +195,8 @@ function updateAlerts(alerts) {
 function checkAlertDataAndUpdate() {
   setTimeout(throttleUpdate, 5000);
   function throttleUpdate() {
-    PriceAlertModel.find( {hoursOfDataStored: { $ne: 168 } }, (err, alerts) => {
+    //  {hoursOfDataStored: { $ne: 168 } },
+    PriceAlertModel.find((err, alerts) => {
       if (err) {
         console.log(CSConstants.error, err);
       } else if (alerts.length > 0) {
