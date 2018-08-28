@@ -47,9 +47,6 @@ function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored,
   }, (err, alert) => {
     if (alert) {
       console.log(symbol + startTime + CSConstants.alertExists);
-      alert.btcPriceAtAlertTime = 0;
-      alert.usdPriceAtAlertTime = 0;
-      alert.save();
     } else {
       PriceAlertModel.create({
         _id: {
@@ -195,8 +192,7 @@ function updateAlerts(alerts) {
 function checkAlertDataAndUpdate() {
   setTimeout(throttleUpdate, 5000);
   function throttleUpdate() {
-    //  {hoursOfDataStored: { $ne: 168 } },
-    PriceAlertModel.find((err, alerts) => {
+    PriceAlertModel.find( {hoursOfDataStored: { $ne: 168 } }, (err, alerts) => {
       if (err) {
         console.log(CSConstants.error, err);
       } else if (alerts.length > 0) {

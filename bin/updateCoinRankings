@@ -2,7 +2,7 @@
 
 const CSConstants = require('../constants/CSConstants');
 const mongoose = require('mongoose');
-const PriceAlertModel = require('../PriceAlertModel');
+const PriceAlertModel = require('../models/PriceAlertModel');
 const request = require('request');
 
 
