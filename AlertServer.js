@@ -3,7 +3,7 @@ const CSConstants = require('./constants/CSConstants');
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
-const PriceAlertModel = require('./PriceAlertModel');
+const PriceAlertModel = require('./models/PriceAlertModel');
 const TestModel = require('./tests/TestModel');
 const utils = require('./utils/utils');
 
