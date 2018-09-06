@@ -4,18 +4,19 @@ const Schema = mongoose.Schema;
 const REASON_ENUM = ['PROFIT', 'LOSS', 'TIMEOUT'];
 
 const NotificationSchema = new Schema({
-  // _id: {
-  //   symbol: String,
-  //   startTime: Number,
-  // },
   result: Number,
   reason: {
     type: String,
     enum : REASON_ENUM,
     default: null
   },
+  notified: Boolean,
   userId: { type: Schema.Types.ObjectId, ref: 'User' },
-  alertId: { type: Schema.Types.ObjectId, ref: 'Alert' },
+  // Does alertId have to be unique?
+  alertId: { type: {
+    symbol: String,
+    startTime: Number,
+  }, ref: 'PriceAlert' },
   strategyId: { type: Schema.Types.ObjectId, ref: 'Strategy' },
 });
 

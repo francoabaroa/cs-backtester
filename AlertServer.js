@@ -106,6 +106,56 @@ app.get('/backtesttest', (req, res) => {
   });
 });
 
+app.post('/savestrategy', function(req, res) {
+  // TODO: restrict appropriately
+  // TODO: new user VS existing user
+  const userId = req.body.userId;
+  const profitTakePercent = req.body.profitTakePercent;
+  const stopLossPercent = req.body.stopLossPercent;
+  const timeOutPeriodInHrs = req.body.timeOutPeriodInHrs;
+  const currencies = req.body.currencies;
+  const exchanges = req.body.exchanges;
+
+  StrategyModel.create({
+    userId,
+    profitTakePercent,
+    stopLossPercent,
+    timeOutPeriodInHrs,
+    currencies,
+    exchanges,
+  }, (err, strategy) => {
+      if (err) {
+        console.log(CSConstants.error, err);
+      } else {
+        console.log('Strategy saved: ', strategy.id);
+        res.send('Strategy saved');
+      }
+  });
+});
+
+app.post('/createuser', function(req, res) {
+  // TODO: restrict appropriately
+  // TODO: validation on cellphone
+  const cellphone = req.body.cellphone;
+  const email = req.body.email;
+  const preferences = req.body.preferences;
+  UserModel.create({
+    cellphone,
+    active: true,
+    email,
+    passwordHash: null,
+    preferences,
+    settings: [],
+  }, (err, user) => {
+      if (err) {
+        console.log(CSConstants.error, err);
+      } else {
+        console.log('User created');
+        res.send(user.id);
+      }
+  });
+});
+
 app.get('*', function(req, res) {
   res.status(404).send(CSConstants.nothingToSee);
 });

@@ -1,4 +1,5 @@
 const queryString = require('query-string');
+const axios = require('axios');
 
 function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRankId) {
   let currentCoinHistoricalData = historicalData;
@@ -65,6 +66,25 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
     sellTime,
     buyTime,
   };
+}
+
+function getCurrentPrice(symbol, callback) {
+  let fsym = 'fsym=' + symbol;
+  let tsyms = symbol === 'BTC' ? 'USD' : 'BTC';
+  let url =
+    'https://min-api.cryptocompare.com/data/price?' +
+    fsym +
+    '&tsyms=' +
+    tsyms;
+
+  axios.get(url).then(res => {
+    if (res.data.BTC || res.data.USD) {
+      let response = res.data.BTC ? res.data.BTC : res.data.USD;
+      callback(response);
+    }
+  }).catch(function (error) {
+    console.log(CSConstants.axiosError, error);
+  });
 }
 
 function getUrlParams(reqUrl) {
@@ -215,6 +235,7 @@ function findClosestTimestampWithData(startTime) {
 }
 
 module.exports.getUrlParams = getUrlParams;
+module.exports.getCurrentPrice = getCurrentPrice;
 module.exports.processAlerts = processAlerts;
 module.exports.findClosestTimestampWithData = findClosestTimestampWithData;
 
