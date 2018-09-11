@@ -2,6 +2,7 @@ const CSConstants = require('../constants/CSConstants');
 const mongoose = require('mongoose');
 const request = require('request');
 const utils = require('../utils/utils');
+const axios = require('axios');
 
 const convert = require('convert-units');
 
@@ -11,7 +12,7 @@ const StrategyModel = require('../models/StrategyModel');
 
 mongoose.Promise = Promise;
 mongoose.connect(
-  CSConstants.mongoCSDatabase,
+  process.env.MONGO,
   {
     useNewUrlParser: true
   }

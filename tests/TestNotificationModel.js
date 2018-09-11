@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const REASON_ENUM = ['PROFIT', 'LOSS', 'TIMEOUT'];
 
-const NotificationSchema = new Schema({
+const TestNotificationSchema = new Schema({
   result: Number,
   reason: {
     type: String,
@@ -25,4 +25,4 @@ const NotificationSchema = new Schema({
   strategyId: { type: Schema.Types.ObjectId, ref: 'Strategy' },
 });
 
-module.exports = mongoose.model('Notification', NotificationSchema);
+module.exports = mongoose.model('TestNotification', TestNotificationSchema);

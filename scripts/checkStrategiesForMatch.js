@@ -12,7 +12,7 @@ const convert = require('convert-units');
 
 mongoose.Promise = Promise;
 mongoose.connect(
-  CSConstants.mongoCSDatabase,
+  process.env.MONGO,
   {
     useNewUrlParser: true
   }
@@ -28,7 +28,10 @@ function createNotification(
   reasonEnum
 ) {
   // TODO: prevent duplicate notifs ?
+  // TODO: make sure string
+  let notificationId = userId + alertId;
   NotificationModel.create({
+    notificationId,
     userId,
     alertId: alertId,
     strategyId,

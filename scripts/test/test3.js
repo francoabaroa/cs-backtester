@@ -9,7 +9,7 @@ const utils = require('../utils/utils');
 
 mongoose.Promise = Promise;
 mongoose.connect(
-  CSConstants.mongoCSDatabase,
+  process.env.MONGO,
   {
     useNewUrlParser: true
   }
