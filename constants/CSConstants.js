@@ -11,7 +11,6 @@ module.exports = {
   error: 'Error: ',
   googleSheetsApiUrl: 'https://sheets.googleapis.com/v4/spreadsheets/1FU5qgalAYC7gcgypm2qgMe8O-VI8gDsmDdjo6Yr7a_Q/values/A1%3AC?key=AIzaSyCIzT7BqKppc4o9emf03YzO3MZv4qa7bN4',
   mimeTypeJson: 'application/json',
-  mongoCSDatabase: 'mongodb://cryptospotlight:12345678abc@ds117848.mlab.com:17848/cryptospotlight',
   noInfoFound: 'No info found',
   noRankingsFound: 'No rankings info found',
   nothingToSee: 'Nothing to see here, carry on',

@@ -6,13 +6,22 @@ const path = require('path');
 const PriceAlertModel = require('./models/PriceAlertModel');
 const TestModel = require('./tests/TestModel');
 const utils = require('./utils/utils');
+require('dotenv').config();
+
+const twilio = require('twilio');
+const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN).lookups.v1;
+
+function verify(phoneNumber) {
+  return client.phoneNumbers(phoneNumber).fetch()
+    .then(numberData => true, err => false);
+}
 
 const app = express();
 app.use(cors());
 
 mongoose.Promise = Promise;
 mongoose.connect(
-  CSConstants.mongoCSDatabase,
+  process.env.MONGO,
   {
     useNewUrlParser: true
   }
@@ -154,6 +163,17 @@ app.post('/createuser', function(req, res) {
         res.send(user.id);
       }
   });
+});
+
+app.get('/check/:number', (req, res) => {
+  verify(req.params.number)
+    .then(valid => {
+      res.send({ valid });
+    })
+    .catch(err => {
+      console.error(err.message);
+      res.status(500).send('An unexpected error occurred');
+    });
 });
 
 app.get('*', function(req, res) {
