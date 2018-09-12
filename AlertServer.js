@@ -8,8 +8,10 @@ const PriceAlertModel = require('./models/PriceAlertModel');
 const utils = require('./utils/utils');
 require('dotenv').config();
 
+const axios = require('axios');
 const twilio = require('twilio');
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN).lookups.v1;
+const queryString = require('query-string');
 
 function verify(phoneNumber) {
   return client.phoneNumbers(phoneNumber).fetch()
@@ -90,6 +92,27 @@ app.get('/alertsymbols', (req, res) => {
       }
       res.send(alertSymbols);
     }
+  });
+});
+
+app.get('/top', (req, res) => {
+  const url = req.originalUrl.substring(req.originalUrl.indexOf("?") + 1);
+  let cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?limit=' + queryString.parse(url).top + '&structure=array'
+  axios.get(cmcUrl).then(cmcResponse => {
+    let data = cmcResponse.data.data;
+    if (data.length > 0) {
+      let alertSymbolsMap = {};
+      let alertSymbols = [];
+      for (let i = 0; i < data.length; i++) {
+        if (!alertSymbolsMap[data[i].symbol]) {
+          alertSymbolsMap[data[i].symbol] = data[i].symbol;
+          alertSymbols.push(data[i].symbol);
+        }
+      }
+      res.send(alertSymbols);
+    }
+  }).catch(function (error) {
+    console.log(CSConstants.axiosError, error);
   });
 });
 
