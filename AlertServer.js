@@ -4,6 +4,12 @@ const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const PriceAlertModel = require('./models/PriceAlertModel');
+const StrategyModel = require('./models/StrategyModel');
+const UserModel = require('./models/UserModel');
+
+const TestStrategyModel = require('./tests/TestStrategyModel');
+const TestUserModel = require('./tests/TestUserModel');
+
 /* const TestModel = require('./tests/TestModel'); */
 const utils = require('./utils/utils');
 require('dotenv').config();
@@ -144,6 +150,7 @@ app.post('/savestrategy', function(req, res) {
   // TODO: restrict appropriately
   // TODO: new user VS existing user
   const userId = req.body.userId;
+  const active = req.body.active;
   const profitTakePercent = req.body.profitTakePercent;
   const stopLossPercent = req.body.stopLossPercent;
   const timeOutPeriodInHrs = req.body.timeOutPeriodInHrs;
@@ -151,6 +158,7 @@ app.post('/savestrategy', function(req, res) {
   const exchanges = req.body.exchanges;
 
   StrategyModel.create({
+    active,
     userId,
     profitTakePercent,
     stopLossPercent,
@@ -170,16 +178,24 @@ app.post('/savestrategy', function(req, res) {
 app.post('/createuser', function(req, res) {
   // TODO: restrict appropriately
   // TODO: validation on cellphone
+  const active = req.body.active;
   const cellphone = req.body.cellphone;
   const email = req.body.email;
+  const firstName = req.body.firstName;
+  const lastName = req.body.lastName;
   const preferences = req.body.preferences;
+  const surveyAnswers = req.body.surveyAnswers;
+
   UserModel.create({
     cellphone,
-    active: true,
+    active,
     email,
+    firstName,
+    lastName,
     passwordHash: null,
     preferences,
     settings: [],
+    surveyAnswers,
   }, (err, user) => {
       if (err) {
         console.log(CSConstants.error, err);
@@ -189,6 +205,68 @@ app.post('/createuser', function(req, res) {
       }
   });
 });
+
+app.post('/saveteststrategy', function(req, res) {
+  // TODO: restrict appropriately
+  // TODO: new user VS existing user
+  const userId = req.body.userId;
+  const active = req.body.active;
+  const profitTakePercent = req.body.profitTakePercent;
+  const stopLossPercent = req.body.stopLossPercent;
+  const timeOutPeriodInHrs = req.body.timeOutPeriodInHrs;
+  const currencies = req.body.currencies;
+  const exchanges = req.body.exchanges;
+
+  TestStrategyModel.create({
+    active,
+    userId,
+    profitTakePercent,
+    stopLossPercent,
+    timeOutPeriodInHrs,
+    currencies,
+    exchanges,
+  }, (err, strategy) => {
+      if (err) {
+        console.log(CSConstants.error, err);
+      } else {
+        console.log('Strategy saved: ', strategy.id);
+        res.send('Strategy saved');
+      }
+  });
+});
+
+app.post('/createtestuser', function(req, res) {
+  // TODO: restrict appropriately
+  // TODO: validation on cellphone
+  const active = req.body.active;
+  const cellphone = req.body.cellphone;
+  const email = req.body.email;
+  const firstName = req.body.firstName;
+  const lastName = req.body.lastName;
+  const preferences = req.body.preferences;
+  const surveyAnswers = req.body.surveyAnswers;
+
+  TestUserModel.create({
+    cellphone,
+    active,
+    email,
+    firstName,
+    lastName,
+    passwordHash: null,
+    preferences,
+    settings: [],
+    surveyAnswers,
+  }, (err, user) => {
+      if (err) {
+        console.log(CSConstants.error, err);
+      } else {
+        console.log('User created');
+        res.send(user.id);
+      }
+  });
+});
+
+
 
 app.get('/check/:number', (req, res) => {
   verify(req.params.number)
