@@ -16,6 +16,7 @@ require('dotenv').config();
 
 const axios = require('axios');
 const twilio = require('twilio');
+const bodyParser = require('body-parser')
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN).lookups.v1;
 const queryString = require('query-string');
 
@@ -26,6 +27,7 @@ function verify(phoneNumber) {
 
 const app = express();
 app.use(cors());
+app.use(bodyParser.json())
 
 mongoose.Promise = Promise;
 mongoose.connect(
@@ -238,6 +240,7 @@ app.post('/saveteststrategy', function(req, res) {
 app.post('/createtestuser', function(req, res) {
   // TODO: restrict appropriately
   // TODO: validation on cellphone
+  console.log('req create test user', req.body);
   const active = req.body.active;
   const cellphone = req.body.cellphone;
   const email = req.body.email;
@@ -261,7 +264,10 @@ app.post('/createtestuser', function(req, res) {
         console.log(CSConstants.error, err);
       } else {
         console.log('User created');
-        res.send(user.id);
+        let testObj = {
+          userId: user.id
+        };
+        res.send(testObj);
       }
   });
 });
@@ -283,5 +289,5 @@ app.get('*', function(req, res) {
   res.status(404).send(CSConstants.nothingToSee);
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on ${port}`));

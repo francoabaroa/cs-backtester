@@ -14,6 +14,7 @@
   "dependencies": {
     "async": "^2.6.1",
     "axios": "^0.18.0",
+    "body-parser": "^1.18.3",
     "convert-units": "^2.3.4",
     "cors": "^2.8.4",
     "dotenv": "^6.0.0",
