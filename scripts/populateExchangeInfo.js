@@ -60,6 +60,4 @@ function getExchangeStuff(url, exchangeName) {
   });
 }
 
-// let url = '';
-// getExchangeStuff(url);
 

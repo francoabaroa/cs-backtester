@@ -19,6 +19,7 @@ const twilio = require('twilio');
 const bodyParser = require('body-parser')
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN).lookups.v1;
 const queryString = require('query-string');
+const validator = require('email-validator');
 
 function verify(phoneNumber) {
   return client.phoneNumbers(phoneNumber).fetch()
@@ -149,8 +150,7 @@ app.get('/backtesttest', (req, res) => {
 */
 
 app.post('/savestrategy', function(req, res) {
-  // TODO: restrict appropriately
-  // TODO: new user VS existing user
+  // TODO: restrict endpoint
   const userId = req.body.userId;
   const active = req.body.active;
   const profitTakePercent = req.body.profitTakePercent;
@@ -178,8 +178,7 @@ app.post('/savestrategy', function(req, res) {
 });
 
 app.post('/createuser', function(req, res) {
-  // TODO: restrict appropriately
-  // TODO: validation on cellphone
+  // TODO: restrict endpoint
   const active = req.body.active;
   const cellphone = req.body.cellphone;
   const email = req.body.email;
@@ -272,7 +271,10 @@ app.post('/createtestuser', function(req, res) {
   });
 });
 
-
+app.get('/validemail/:email', (req, res) => {
+  let isValid = validator.validate(req.params.email);
+  res.send({isValid});
+});
 
 app.get('/check/:number', (req, res) => {
   verify(req.params.number)
