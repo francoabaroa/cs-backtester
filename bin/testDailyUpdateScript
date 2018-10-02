@@ -369,7 +369,6 @@ function createNotification(
 
 function calculatePerfPercent(currentPrice, startPrice) {
   // default to BTC, unless it IS BTC
-  return 20;
   const diff = (currentPrice/startPrice);
   let percent = 1 - diff;
   const negative = percent < 0 ? false : true;
@@ -430,7 +429,8 @@ function checkActiveAlerts(error, response, body) {
               let startTime = convert(Math.abs(alert.startTime)).from('s').to('ms');
               let endTime = new Date();
               let difference = startTime - endTime.getTime();
-              let msToHours = convert(Math.abs(difference)).from('ms').to('h');
+              // let msToHours = convert(Math.abs(difference)).from('ms').to('h');
+              let msToHours = 160;
 
               activeAlerts[i].performancePercent = perfPercent;
               activeAlerts[i].timeSinceAlertedInHrs = msToHours;
@@ -472,18 +472,18 @@ function checkActiveAlerts(error, response, body) {
                         }
                       }
 
-                      if (profitHitFlag) {
-                        result = activeAlerts[i].performancePercent;
-                        // console.log(REASON_ENUM[0]);
-                        reasonEnum = REASON_ENUM[0];
+                      if (timeOutFlag) {
+                        result = activeAlerts[i].timeSinceAlertedInHrs;
+                        // console.log(REASON_ENUM[2]);
+                        reasonEnum = REASON_ENUM[2];
                       } else if (stopLossHitFlag) {
                         result = activeAlerts[i].performancePercent;
                         // console.log(REASON_ENUM[1]);
                         reasonEnum = REASON_ENUM[1];
-                      } else if (timeOutFlag) {
-                        result = activeAlerts[i].timeSinceAlertedInHrs;
-                        // console.log(REASON_ENUM[2]);
-                        reasonEnum = REASON_ENUM[2];
+                      } else if (profitHitFlag) {
+                        result = activeAlerts[i].performancePercent;
+                        // console.log(REASON_ENUM[0]);
+                        reasonEnum = REASON_ENUM[0];
                       }
 
                       if (savedDocs[activeAlerts[i].id] === undefined) {
