@@ -369,6 +369,7 @@ function createNotification(
 
 function calculatePerfPercent(currentPrice, startPrice) {
   // default to BTC, unless it IS BTC
+  return 20;
   const diff = (currentPrice/startPrice);
   let percent = 1 - diff;
   const negative = percent < 0 ? false : true;
