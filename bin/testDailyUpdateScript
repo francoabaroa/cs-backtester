@@ -424,13 +424,14 @@ function checkActiveAlerts(error, response, body) {
                 )
               );
 
+              perfPercent = -21;
+
               console.log('perfPercent', perfPercent);
 
               let startTime = convert(Math.abs(alert.startTime)).from('s').to('ms');
               let endTime = new Date();
               let difference = startTime - endTime.getTime();
-              // let msToHours = convert(Math.abs(difference)).from('ms').to('h');
-              let msToHours = 160;
+              let msToHours = convert(Math.abs(difference)).from('ms').to('h');
 
               activeAlerts[i].performancePercent = perfPercent;
               activeAlerts[i].timeSinceAlertedInHrs = msToHours;
