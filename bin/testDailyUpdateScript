@@ -448,11 +448,11 @@ function checkActiveAlerts(error, response, body) {
                         }
                         timeOutFlag = true;
                       } else {
-                        if (activeAlerts[i].performancePercent >= 0) {
+                        if (activeAlerts[i].performancePercent >= 0 && isFinite(activeAlerts[i].performancePercent) && activeAlerts[i].performancePercent !== null) {
                           if (strategy.profitTakePercent <= activeAlerts[i].performancePercent) {
                             profitHitFlag = true;
                           }
-                        } else if (activeAlerts[i].performancePercent < 0) {
+                        } else if (activeAlerts[i].performancePercent < 0 && isFinite(activeAlerts[i].performancePercent) && activeAlerts[i].performancePercent !== null) {
                           if (strategy.stopLossPercent <= Math.abs(activeAlerts[i].performancePercent)) {
                             stopLossHitFlag = true;
                           }
