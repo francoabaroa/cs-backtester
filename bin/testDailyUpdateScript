@@ -367,6 +367,7 @@ function calculatePerfPercent(currentPrice, startPrice) {
   let percent = 1 - diff;
   const negative = percent < 0 ? false : true;
   const finalResult = percent * 100;
+  console.log('currentPrice', currentPrice, 'startPrice', startPrice, 'finalResult', finalResult);
   return negative ? -Math.abs(finalResult) : Math.abs(finalResult);
 }
 
