@@ -415,6 +415,7 @@ function checkActiveAlerts(error, response, body) {
                   startPrice,
                 )
               );
+              //
 
               let startTime = convert(Math.abs(alert.startTime)).from('s').to('ms');
               let endTime = new Date();
