@@ -413,6 +413,10 @@ function checkActiveAlerts(error, response, body) {
                 )
               );
 
+              if (!isFinite(perfPercent)) {
+                perfPercent = 0;
+              }
+
               let startTime = convert(Math.abs(alert.startTime)).from('s').to('ms');
               let endTime = new Date();
               let difference = startTime - endTime.getTime();
