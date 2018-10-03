@@ -388,7 +388,6 @@ function sendSms(userToNotify, reason, result, symbol) {
 
 function checkActiveAlerts(error, response, body) {
   console.log('DONE RUNNING 2. CALLING CHECK ACTIVE ALERTS');
-  // TODO: handle case where ageInHrs > 168 && active === true
   ActiveAlertModel.find({ ageInHrs: { $lte: 168}, active: true }, (err, activeAlerts) => {
     if (err) {
         res.send(err);
@@ -415,7 +414,6 @@ function checkActiveAlerts(error, response, body) {
                   startPrice,
                 )
               );
-              //
 
               let startTime = convert(Math.abs(alert.startTime)).from('s').to('ms');
               let endTime = new Date();
