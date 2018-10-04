@@ -524,6 +524,7 @@ function checkNotifications(error, response, body) {
         let result = 0;
         // pass in coin symbol using alertId reference
         sendSms(userToNotify, reason, result, /* COIN SYMBOL */);
+        // TODO: need to add ID to notifiedStrategiesList of activeAlertModel
         notification.notified = true;
         notification.save();
       }

@@ -106,23 +106,75 @@ app.get('/alertsymbols', (req, res) => {
 
 app.get('/top', (req, res) => {
   const url = req.originalUrl.substring(req.originalUrl.indexOf("?") + 1);
-  let cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?limit=' + queryString.parse(url).top + '&structure=array'
-  axios.get(cmcUrl).then(cmcResponse => {
-    let data = cmcResponse.data.data;
-    if (data.length > 0) {
+  let cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?limit=' + queryString.parse(url).top + '&structure=array';
+  let topCoinsNumber = parseInt(queryString.parse(url).top);
+
+  if (topCoinsNumber > 250 || (topCoinsNumber > 100 && topCoinsNumber < 250)) {
+    res.send('Sorry, this endpoint only supports values less than 100, or equal to 250');
+  } else if (topCoinsNumber === 250) {
+    let cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?limit=100&structure=array';
+    axios.get(cmcUrl).then(cmcResponse => {
       let alertSymbolsMap = {};
       let alertSymbols = [];
-      for (let i = 0; i < data.length; i++) {
-        if (!alertSymbolsMap[data[i].symbol]) {
-          alertSymbolsMap[data[i].symbol] = data[i].symbol;
-          alertSymbols.push(data[i].symbol);
+      let data = cmcResponse.data.data;
+      if (data.length > 0) {
+        for (let i = 0; i < data.length; i++) {
+          if (!alertSymbolsMap[data[i].symbol]) {
+            alertSymbolsMap[data[i].symbol] = data[i].symbol;
+            alertSymbols.push(data[i].symbol);
+          }
         }
+        cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?start=101&limit=100&structure=array';
+        axios.get(cmcUrl).then(cmcResponse2 => {
+          let data = cmcResponse2.data.data;
+          if (data.length > 0) {
+            for (let i = 0; i < data.length; i++) {
+              if (!alertSymbolsMap[data[i].symbol]) {
+                alertSymbolsMap[data[i].symbol] = data[i].symbol;
+                alertSymbols.push(data[i].symbol);
+              }
+            }
+            cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?start=201&limit=50&structure=array';
+            axios.get(cmcUrl).then(cmcResponse3 => {
+              let data = cmcResponse3.data.data;
+              if (data.length > 0) {
+                for (let i = 0; i < data.length; i++) {
+                  if (!alertSymbolsMap[data[i].symbol]) {
+                    alertSymbolsMap[data[i].symbol] = data[i].symbol;
+                    alertSymbols.push(data[i].symbol);
+                  }
+                }
+                res.send(alertSymbols);
+              }
+            }).catch(function (error) {
+              console.log(CSConstants.axiosError, error);
+            });
+          }
+        }).catch(function (error) {
+          console.log(CSConstants.axiosError, error);
+        });
       }
-      res.send(alertSymbols);
-    }
-  }).catch(function (error) {
-    console.log(CSConstants.axiosError, error);
-  });
+    }).catch(function (error) {
+      console.log(CSConstants.axiosError, error);
+    });
+  } else {
+    axios.get(cmcUrl).then(cmcResponse => {
+      let data = cmcResponse.data.data;
+      if (data.length > 0) {
+        let alertSymbolsMap = {};
+        let alertSymbols = [];
+        for (let i = 0; i < data.length; i++) {
+          if (!alertSymbolsMap[data[i].symbol]) {
+            alertSymbolsMap[data[i].symbol] = data[i].symbol;
+            alertSymbols.push(data[i].symbol);
+          }
+        }
+        res.send(alertSymbols);
+      }
+    }).catch(function (error) {
+      console.log(CSConstants.axiosError, error);
+    });
+  }
 });
 
 /*
@@ -248,6 +300,43 @@ app.post('/createtestuser', function(req, res) {
   const preferences = req.body.preferences;
   const surveyAnswers = req.body.surveyAnswers;
 
+  /*
+
+  PriceAlertModel.findOne({
+    _id: {
+        symbol: `${symbol}`,
+        startTime,
+    }
+  }, (err, alert) => {
+    if (alert) {
+      console.log(symbol + startTime + CSConstants.alertExists);
+    } else {
+      PriceAlertModel.create({
+        _id: {
+          symbol: `${symbol}`,
+          startTime,
+        },
+        history: historicalData,
+        hoursOfDataStored: hoursOfDataStored,
+        symbol: symbol,
+        startTime: startTime,
+        storedDataApiUrl: null,
+        alertId: alertId,
+        btcPriceAtAlertTime: 0,
+        usdPriceAtAlertTime: 0,
+      }, (err, alert) => {
+          if (err) {
+            console.log(CSConstants.error, err);
+          } else {
+            successfullyCreated++;
+            console.log(CSConstants.numOfRecordsSaved + successfullyCreated);
+          }
+      });
+    }
+  });
+
+  */
+
   TestUserModel.create({
     cellphone,
     active,
@@ -274,6 +363,62 @@ app.post('/createtestuser', function(req, res) {
 app.get('/validemail/:email', (req, res) => {
   let isValid = validator.validate(req.params.email);
   res.send({isValid});
+});
+
+app.get('/getphoneslist/:symbol', (req, res) => {
+  let symbol = req.params.symbol;
+  let phones = [];
+  StrategyModel.find({currencies: { $in: [symbol] }}, (err, strategies) => {
+    if (err) {
+      console.log('Error: ' + err);
+    } else {
+      let userIds = [];
+      for (let i = 0; i < strategies.length; i++) {
+        userIds.push(mongoose.Types.ObjectId(strategies[i].userId));
+      }
+      TestUserModel.find({
+        '_id': { $in: userIds}
+      }, function(err, users){
+        if (err) {
+          // handle error
+        } else if (users) {
+          for (let j = 0; j < users.length; j++) {
+            phones.push(users[j].cellphone);
+          }
+        }
+        console.log('phones', phones);
+        res.send({phonesList: phones});
+      });
+    }
+  });
+});
+
+app.get('/getphoneslisttest/:symbol', (req, res) => {
+  let symbol = req.params.symbol;
+  let phones = [];
+  TestStrategyModel.find({currencies: { $in: [symbol] }}, (err, strategies) => {
+    if (err) {
+      console.log('Error: ' + err);
+    } else {
+      let userIds = [];
+      for (let i = 0; i < strategies.length; i++) {
+        userIds.push(mongoose.Types.ObjectId(strategies[i].userId));
+      }
+      TestUserModel.find({
+        '_id': { $in: userIds}
+      }, function(err, users){
+        if (err) {
+          // handle error
+        } else if (users) {
+          for (let j = 0; j < users.length; j++) {
+            phones.push(users[j].cellphone);
+          }
+        }
+        console.log('phones', phones);
+        res.send({phonesList: phones});
+      });
+    }
+  });
 });
 
 app.get('/check/:number', (req, res) => {
