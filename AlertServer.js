@@ -134,6 +134,15 @@ app.get("/top", (req, res) => {
       "Sorry, this endpoint only supports values less than 100, or equal to 250"
     );
   } else if (topCoinsNumber === 250) {
+    /*
+        (Per CMC API guidelines)
+
+        This endpoint displays cryptocurrency ticker data in order of rank.
+        The maximum number of results per call is 100.
+        Pagination is possible by using the start and limit parameters.
+
+        ¯\_(ツ)_/¯ Yes, I was lazy and repeated the same logic 3 times ¯\_(ツ)_/¯
+    */
     let cmcUrl =
       "https://api.coinmarketcap.com/v2/ticker/?limit=100&structure=array";
     axios
