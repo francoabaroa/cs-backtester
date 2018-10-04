@@ -1,7 +1,14 @@
-const queryString = require('query-string');
-const axios = require('axios');
+const queryString = require("query-string");
+const axios = require("axios");
 
-function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRankId) {
+function getBacktestData(
+  historicalData,
+  profit,
+  loss,
+  time,
+  coinSymbol,
+  alertRankId
+) {
   let currentCoinHistoricalData = historicalData;
 
   if (currentCoinHistoricalData.length === 0) {
@@ -10,9 +17,9 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
 
   let buyPrice = parseFloat(currentCoinHistoricalData[0].open);
   let buyTime = currentCoinHistoricalData[0].time;
-  let profitTake = (parseFloat(profit)/100);
+  let profitTake = parseFloat(profit) / 100;
   let gainThreshold = (profitTake + 1) * parseFloat(buyPrice);
-  let stopLoss = (parseFloat(loss)/100);
+  let stopLoss = parseFloat(loss) / 100;
   let lossThreshold = (1 - stopLoss) * parseFloat(buyPrice);
   let sellPrice = -1;
   let sellTime = -1;
@@ -57,34 +64,34 @@ function getBacktestData(historicalData, profit, loss, time, coinSymbol, alertRa
   }
 
   return {
-    profit: (sellPrice/buyPrice),
+    profit: sellPrice / buyPrice,
     duration,
     symbol: coinSymbol,
     sellPrice,
     buyPrice,
     alertRankId,
     sellTime,
-    buyTime,
+    buyTime
   };
 }
 
 function getCurrentPrice(symbol, callback) {
-  let fsym = 'fsym=' + symbol;
-  let tsyms = symbol === 'BTC' ? 'USD' : 'BTC';
+  let fsym = "fsym=" + symbol;
+  let tsyms = symbol === "BTC" ? "USD" : "BTC";
   let url =
-    'https://min-api.cryptocompare.com/data/price?' +
-    fsym +
-    '&tsyms=' +
-    tsyms;
+    "https://min-api.cryptocompare.com/data/price?" + fsym + "&tsyms=" + tsyms;
 
-  axios.get(url).then(res => {
-    if (res.data.BTC || res.data.USD) {
-      let response = res.data.BTC ? res.data.BTC : res.data.USD;
-      callback(response);
-    }
-  }).catch(function (error) {
-    console.log(CSConstants.axiosError, error);
-  });
+  axios
+    .get(url)
+    .then(res => {
+      if (res.data.BTC || res.data.USD) {
+        let response = res.data.BTC ? res.data.BTC : res.data.USD;
+        callback(response);
+      }
+    })
+    .catch(function(error) {
+      console.log(CSConstants.axiosError, error);
+    });
 }
 
 function getUrlParams(reqUrl) {
@@ -100,8 +107,8 @@ function getUrlParams(reqUrl) {
     includeFees: parsed.includeFees,
     start: parseInt(parsed.start),
     end: parseInt(parsed.end),
-    timeDelay: parseInt(parsed.timeDelay),
-  }
+    timeDelay: parseInt(parsed.timeDelay)
+  };
 }
 
 function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
@@ -112,7 +119,6 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
   let usdResultsMap = {};
   let usdTotalProfit = 0;
 
-
   for (let i = 0; i < alerts.length; i++) {
     const coinSymbol = alerts[i]._id.symbol.trim();
     const alertStartTime = alerts[i]._id.startTime;
@@ -122,12 +128,27 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
 
     const exchangeFee = 0.004;
 
-    let btcHistoricalData = alerts[i].history[0].btc ? alerts[i].history[0].btc : [];
-    let usdHistoricalData = alerts[i].history[0].usd ? alerts[i].history[0].usd : [];
+    let btcHistoricalData = alerts[i].history[0].btc
+      ? alerts[i].history[0].btc
+      : [];
+    let usdHistoricalData = alerts[i].history[0].usd
+      ? alerts[i].history[0].usd
+      : [];
 
     if (btcHistoricalData) {
-      const output = getBacktestData(btcHistoricalData, profit, loss, timeOut, coinSymbol, alertRankId);
-      if (output && !isNaN(output.profit) && !(btcResultsMap[coinSymbol + alertStartTime])) {
+      const output = getBacktestData(
+        btcHistoricalData,
+        profit,
+        loss,
+        timeOut,
+        coinSymbol,
+        alertRankId
+      );
+      if (
+        output &&
+        !isNaN(output.profit) &&
+        !btcResultsMap[coinSymbol + alertStartTime]
+      ) {
         let finalProfit = null;
 
         if (includeExchangeFees === true) {
@@ -145,8 +166,19 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
     }
 
     if (usdHistoricalData) {
-      const output = getBacktestData(usdHistoricalData, profit, loss, timeOut, coinSymbol, alertRankId);
-      if (output && !isNaN(output.profit) && !(usdResultsMap[coinSymbol + alertStartTime])) {
+      const output = getBacktestData(
+        usdHistoricalData,
+        profit,
+        loss,
+        timeOut,
+        coinSymbol,
+        alertRankId
+      );
+      if (
+        output &&
+        !isNaN(output.profit) &&
+        !usdResultsMap[coinSymbol + alertStartTime]
+      ) {
         let finalProfit = null;
 
         if (includeExchangeFees === true) {
@@ -177,10 +209,12 @@ function processAlerts(alerts, profit, loss, timeOut, includeExchangeFees) {
   const btcTotalProfitPercentage = parseFloat(btcTotalProfit * 100).toFixed(2);
   const usdTotalProfitPercentage = parseFloat(usdTotalProfit * 100).toFixed(2);
   const backtestResponse = {
-    btcTotalProfit: btcResults.length !== 0 ? btcTotalProfitPercentage : 'No Data',
+    btcTotalProfit:
+      btcResults.length !== 0 ? btcTotalProfitPercentage : "No Data",
     btcResults,
-    usdTotalProfit: usdResults.length !== 0 ? usdTotalProfitPercentage : 'No Data',
-    usdResults,
+    usdTotalProfit:
+      usdResults.length !== 0 ? usdTotalProfitPercentage : "No Data",
+    usdResults
   };
 
   return backtestResponse;
@@ -197,7 +231,7 @@ function findClosestTimestampWithData(startTime) {
   var twelveHoursInSeconds = oneDayInSeconds * 0.5;
   var sixHoursInSeconds = twelveHoursInSeconds * 0.5;
 
-  const currentTime = Math.round((new Date()).getTime() / 1000);
+  const currentTime = Math.round(new Date().getTime() / 1000);
   let endTime = null;
   let days = 7;
 
@@ -209,7 +243,7 @@ function findClosestTimestampWithData(startTime) {
     fourDaysInSeconds,
     fiveDaysInSeconds,
     sixDaysInSeconds,
-    sevenDaysInSeconds,
+    sevenDaysInSeconds
   ];
 
   while (endTime === null) {
@@ -228,7 +262,7 @@ function findClosestTimestampWithData(startTime) {
 
   const info = {
     endTime,
-    days: days <= 0 ? 0 : days + 1,
+    days: days <= 0 ? 0 : days + 1
   };
 
   return info;
@@ -238,4 +272,3 @@ module.exports.getUrlParams = getUrlParams;
 module.exports.getCurrentPrice = getCurrentPrice;
 module.exports.processAlerts = processAlerts;
 module.exports.findClosestTimestampWithData = findClosestTimestampWithData;
-

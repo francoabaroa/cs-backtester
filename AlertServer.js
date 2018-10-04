@@ -1,33 +1,35 @@
-const cors = require('cors');
-const CSConstants = require('./constants/CSConstants');
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const PriceAlertModel = require('./models/PriceAlertModel');
-const StrategyModel = require('./models/StrategyModel');
-const UserModel = require('./models/UserModel');
+const cors = require("cors");
+const CSConstants = require("./constants/CSConstants");
+const express = require("express");
+const mongoose = require("mongoose");
+const path = require("path");
+const PriceAlertModel = require("./models/PriceAlertModel");
+const StrategyModel = require("./models/StrategyModel");
+const UserModel = require("./models/UserModel");
 
-const TestStrategyModel = require('./tests/TestStrategyModel');
-const TestUserModel = require('./tests/TestUserModel');
+const TestStrategyModel = require("./tests/TestStrategyModel");
+const TestUserModel = require("./tests/TestUserModel");
 
-/* const TestModel = require('./tests/TestModel'); */
-const utils = require('./utils/utils');
-require('dotenv').config();
+const utils = require("./utils/utils");
+require("dotenv").config();
 
-const axios = require('axios');
-const twilio = require('twilio');
-const bodyParser = require('body-parser')
-const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN).lookups.v1;
-const queryString = require('query-string');
-const validator = require('email-validator');
+const axios = require("axios");
+const twilio = require("twilio");
+const bodyParser = require("body-parser");
+const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN)
+  .lookups.v1;
+const queryString = require("query-string");
+const validator = require("email-validator");
 
 function verify(phoneNumber) {
-  return client.phoneNumbers(phoneNumber).fetch()
+  return client
+    .phoneNumbers(phoneNumber)
+    .fetch()
     .then(numberData => true, err => false);
 }
 
 const app = express();
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 app.use(cors());
 
 mongoose.Promise = Promise;
@@ -38,28 +40,41 @@ mongoose.connect(
   }
 );
 
-app.get('/alerts', (req, res) => {
+app.get("/alerts", (req, res) => {
   PriceAlertModel.find((err, alerts) => {
     if (err) {
-        res.send(err);
+      res.send(err);
     } else {
-        res.send(alerts);
+      res.send(alerts);
     }
   });
 });
 
-app.get('/backtest', (req, res) => {
-  const {loss, profit, timeOut, top, coins, includeFees, start, end, timeDelay} = utils.getUrlParams(req.originalUrl);
+app.get("/backtest", (req, res) => {
+  const {
+    loss,
+    profit,
+    timeOut,
+    top,
+    coins,
+    includeFees,
+    start,
+    end,
+    timeDelay
+  } = utils.getUrlParams(req.originalUrl);
   let query = {};
   let selectedCoins = coins ? JSON.parse(coins) : null;
-  let includeExchangeFees = includeFees === 'true' ? true : false;
+  let includeExchangeFees = includeFees === "true" ? true : false;
 
   if (!isNaN(top)) {
-    query = { hoursOfDataStored: { $gte: timeOut}, lastRank: { $lte: top} };
+    query = { hoursOfDataStored: { $gte: timeOut }, lastRank: { $lte: top } };
   } else if (Array.isArray(selectedCoins) && selectedCoins.length > 0) {
-    query = { hoursOfDataStored: { $gte: timeOut}, symbol: { $in: selectedCoins } };
+    query = {
+      hoursOfDataStored: { $gte: timeOut },
+      symbol: { $in: selectedCoins }
+    };
   } else {
-    query = { hoursOfDataStored: { $gte: timeOut} };
+    query = { hoursOfDataStored: { $gte: timeOut } };
   }
 
   if (!isNaN(start) && !isNaN(end)) {
@@ -70,25 +85,27 @@ app.get('/backtest', (req, res) => {
     if (err) {
       res.send(err);
     } else {
-      res.send(utils.processAlerts(alerts, profit, loss, timeOut, includeExchangeFees));
+      res.send(
+        utils.processAlerts(alerts, profit, loss, timeOut, includeExchangeFees)
+      );
     }
   });
 });
 
-app.get('/pricealerts', (req, res) => {
+app.get("/pricealerts", (req, res) => {
   PriceAlertModel.find((err, alerts) => {
     if (err) {
-        res.send(err);
+      res.send(err);
     } else {
-        res.send(alerts);
+      res.send(alerts);
     }
   });
 });
 
-app.get('/alertsymbols', (req, res) => {
-  PriceAlertModel.find({ hoursOfDataStored: { $gte: 1} }, (err, alerts) => {
+app.get("/alertsymbols", (req, res) => {
+  PriceAlertModel.find({ hoursOfDataStored: { $gte: 1 } }, (err, alerts) => {
     if (err) {
-        res.send(err);
+      res.send(err);
     } else {
       let alertSymbolsMap = {};
       let alertSymbols = [];
@@ -104,39 +121,40 @@ app.get('/alertsymbols', (req, res) => {
   });
 });
 
-app.get('/top', (req, res) => {
+app.get("/top", (req, res) => {
   const url = req.originalUrl.substring(req.originalUrl.indexOf("?") + 1);
-  let cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?limit=' + queryString.parse(url).top + '&structure=array';
+  let cmcUrl =
+    "https://api.coinmarketcap.com/v2/ticker/?limit=" +
+    queryString.parse(url).top +
+    "&structure=array";
   let topCoinsNumber = parseInt(queryString.parse(url).top);
 
   if (topCoinsNumber > 250 || (topCoinsNumber > 100 && topCoinsNumber < 250)) {
-    res.send('Sorry, this endpoint only supports values less than 100, or equal to 250');
+    res.send(
+      "Sorry, this endpoint only supports values less than 100, or equal to 250"
+    );
   } else if (topCoinsNumber === 250) {
-    let cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?limit=100&structure=array';
-    axios.get(cmcUrl).then(cmcResponse => {
-      let alertSymbolsMap = {};
-      let alertSymbols = [];
-      let data = cmcResponse.data.data;
-      if (data.length > 0) {
-        for (let i = 0; i < data.length; i++) {
-          if (!alertSymbolsMap[data[i].symbol]) {
-            alertSymbolsMap[data[i].symbol] = data[i].symbol;
-            alertSymbols.push(data[i].symbol);
-          }
-        }
-        cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?start=101&limit=100&structure=array';
-        axios.get(cmcUrl).then(cmcResponse2 => {
-          let data = cmcResponse2.data.data;
-          if (data.length > 0) {
-            for (let i = 0; i < data.length; i++) {
-              if (!alertSymbolsMap[data[i].symbol]) {
-                alertSymbolsMap[data[i].symbol] = data[i].symbol;
-                alertSymbols.push(data[i].symbol);
-              }
+    let cmcUrl =
+      "https://api.coinmarketcap.com/v2/ticker/?limit=100&structure=array";
+    axios
+      .get(cmcUrl)
+      .then(cmcResponse => {
+        let alertSymbolsMap = {};
+        let alertSymbols = [];
+        let data = cmcResponse.data.data;
+        if (data.length > 0) {
+          for (let i = 0; i < data.length; i++) {
+            if (!alertSymbolsMap[data[i].symbol]) {
+              alertSymbolsMap[data[i].symbol] = data[i].symbol;
+              alertSymbols.push(data[i].symbol);
             }
-            cmcUrl = 'https://api.coinmarketcap.com/v2/ticker/?start=201&limit=50&structure=array';
-            axios.get(cmcUrl).then(cmcResponse3 => {
-              let data = cmcResponse3.data.data;
+          }
+          cmcUrl =
+            "https://api.coinmarketcap.com/v2/ticker/?start=101&limit=100&structure=array";
+          axios
+            .get(cmcUrl)
+            .then(cmcResponse2 => {
+              let data = cmcResponse2.data.data;
               if (data.length > 0) {
                 for (let i = 0; i < data.length; i++) {
                   if (!alertSymbolsMap[data[i].symbol]) {
@@ -144,36 +162,55 @@ app.get('/top', (req, res) => {
                     alertSymbols.push(data[i].symbol);
                   }
                 }
-                res.send(alertSymbols);
+                cmcUrl =
+                  "https://api.coinmarketcap.com/v2/ticker/?start=201&limit=50&structure=array";
+                axios
+                  .get(cmcUrl)
+                  .then(cmcResponse3 => {
+                    let data = cmcResponse3.data.data;
+                    if (data.length > 0) {
+                      for (let i = 0; i < data.length; i++) {
+                        if (!alertSymbolsMap[data[i].symbol]) {
+                          alertSymbolsMap[data[i].symbol] = data[i].symbol;
+                          alertSymbols.push(data[i].symbol);
+                        }
+                      }
+                      res.send(alertSymbols);
+                    }
+                  })
+                  .catch(function(error) {
+                    console.log(CSConstants.axiosError, error);
+                  });
               }
-            }).catch(function (error) {
+            })
+            .catch(function(error) {
               console.log(CSConstants.axiosError, error);
             });
-          }
-        }).catch(function (error) {
-          console.log(CSConstants.axiosError, error);
-        });
-      }
-    }).catch(function (error) {
-      console.log(CSConstants.axiosError, error);
-    });
-  } else {
-    axios.get(cmcUrl).then(cmcResponse => {
-      let data = cmcResponse.data.data;
-      if (data.length > 0) {
-        let alertSymbolsMap = {};
-        let alertSymbols = [];
-        for (let i = 0; i < data.length; i++) {
-          if (!alertSymbolsMap[data[i].symbol]) {
-            alertSymbolsMap[data[i].symbol] = data[i].symbol;
-            alertSymbols.push(data[i].symbol);
-          }
         }
-        res.send(alertSymbols);
-      }
-    }).catch(function (error) {
-      console.log(CSConstants.axiosError, error);
-    });
+      })
+      .catch(function(error) {
+        console.log(CSConstants.axiosError, error);
+      });
+  } else {
+    axios
+      .get(cmcUrl)
+      .then(cmcResponse => {
+        let data = cmcResponse.data.data;
+        if (data.length > 0) {
+          let alertSymbolsMap = {};
+          let alertSymbols = [];
+          for (let i = 0; i < data.length; i++) {
+            if (!alertSymbolsMap[data[i].symbol]) {
+              alertSymbolsMap[data[i].symbol] = data[i].symbol;
+              alertSymbols.push(data[i].symbol);
+            }
+          }
+          res.send(alertSymbols);
+        }
+      })
+      .catch(function(error) {
+        console.log(CSConstants.axiosError, error);
+      });
   }
 });
 
@@ -201,8 +238,7 @@ app.get('/backtesttest', (req, res) => {
 });
 */
 
-app.post('/savestrategy', function(req, res) {
-  // TODO: restrict endpoint
+app.post("/savestrategy", function(req, res) {
   const userId = req.body.userId;
   const active = req.body.active;
   const profitTakePercent = req.body.profitTakePercent;
@@ -211,27 +247,28 @@ app.post('/savestrategy', function(req, res) {
   const currencies = req.body.currencies;
   const exchanges = req.body.exchanges;
 
-  StrategyModel.create({
-    active,
-    userId,
-    profitTakePercent,
-    stopLossPercent,
-    timeOutPeriodInHrs,
-    currencies,
-    exchanges,
-  }, (err, strategy) => {
+  StrategyModel.create(
+    {
+      active,
+      userId,
+      profitTakePercent,
+      stopLossPercent,
+      timeOutPeriodInHrs,
+      currencies,
+      exchanges
+    },
+    (err, strategy) => {
       if (err) {
         console.log(CSConstants.error, err);
       } else {
-        console.log('Strategy saved: ', strategy.id);
-        res.send('Strategy saved');
+        console.log("Strategy saved: ", strategy.id);
+        res.send("Strategy saved");
       }
-  });
+    }
+  );
 });
 
-app.post('/createuser', function(req, res) {
-  // TODO: restrict appropriately
-  console.log('req create test user', req.body);
+app.post("/createuser", function(req, res) {
   const active = req.body.active;
   const cellphone = req.body.cellphone;
   const email = req.body.email;
@@ -240,51 +277,56 @@ app.post('/createuser', function(req, res) {
   const preferences = req.body.preferences;
   const surveyAnswers = req.body.surveyAnswers;
 
-  UserModel.findOne({
-    cellphone: cellphone
-  }, (err, user) => {
-    if (user) {
-      console.log('User exists');
-      user.active = active;
-      user.cellphone = cellphone;
-      user.email = email;
-      user.firstName = firstName;
-      user.lastName = lastName;
-      user.preferences = preferences;
-      user.surveyAnswers = surveyAnswers;
-      user.save();
-      let testObj = {
-        userId: user.id
-      };
-      res.send(testObj);
-    } else {
-      UserModel.create({
-        cellphone,
-        active,
-        email,
-        firstName,
-        lastName,
-        passwordHash: null,
-        preferences,
-        settings: [],
-        surveyAnswers,
-      }, (err, newUser) => {
-          if (err) {
-            console.log(CSConstants.error, err);
-          } else {
-            console.log('User created');
-            let testObj = {
-              userId: newUser.id
-            };
-            res.send(testObj);
+  UserModel.findOne(
+    {
+      cellphone: cellphone
+    },
+    (err, user) => {
+      if (user) {
+        console.log("User exists");
+        user.active = active;
+        user.cellphone = cellphone;
+        user.email = email;
+        user.firstName = firstName;
+        user.lastName = lastName;
+        user.preferences = preferences;
+        user.surveyAnswers = surveyAnswers;
+        user.save();
+        let testObj = {
+          userId: user.id
+        };
+        res.send(testObj);
+      } else {
+        UserModel.create(
+          {
+            cellphone,
+            active,
+            email,
+            firstName,
+            lastName,
+            passwordHash: null,
+            preferences,
+            settings: [],
+            surveyAnswers
+          },
+          (err, newUser) => {
+            if (err) {
+              console.log(CSConstants.error, err);
+            } else {
+              console.log("User created");
+              let testObj = {
+                userId: newUser.id
+              };
+              res.send(testObj);
+            }
           }
-      });
+        );
+      }
     }
-  });
+  );
 });
 
-app.post('/saveteststrategy', function(req, res) {
-  // TODO: restrict appropriately
+app.post("/saveteststrategy", function(req, res) {
   const userId = req.body.userId;
   const active = req.body.active;
   const profitTakePercent = req.body.profitTakePercent;
@@ -293,27 +335,28 @@ app.post('/saveteststrategy', function(req, res) {
   const currencies = req.body.currencies;
   const exchanges = req.body.exchanges;
 
-  TestStrategyModel.create({
-    active,
-    userId,
-    profitTakePercent,
-    stopLossPercent,
-    timeOutPeriodInHrs,
-    currencies,
-    exchanges,
-  }, (err, strategy) => {
+  TestStrategyModel.create(
+    {
+      active,
+      userId,
+      profitTakePercent,
+      stopLossPercent,
+      timeOutPeriodInHrs,
+      currencies,
+      exchanges
+    },
+    (err, strategy) => {
       if (err) {
         console.log(CSConstants.error, err);
       } else {
-        console.log('Strategy saved: ', strategy.id);
-        res.send('Strategy saved');
+        console.log("Strategy saved: ", strategy.id);
+        res.send("Strategy saved");
       }
-  });
+    }
+  );
 });
 
-app.post('/createtestuser', function(req, res) {
-  // TODO: restrict appropriately
-  console.log('req create test user', req.body);
+app.post("/createtestuser", function(req, res) {
   const active = req.body.active;
   const cellphone = req.body.cellphone;
   const email = req.body.email;
@@ -322,123 +365,136 @@ app.post('/createtestuser', function(req, res) {
   const preferences = req.body.preferences;
   const surveyAnswers = req.body.surveyAnswers;
 
-  TestUserModel.findOne({
-    cellphone: cellphone
-  }, (err, user) => {
-    if (user) {
-      console.log('User exists');
-      user.active = active;
-      user.cellphone = cellphone;
-      user.email = email;
-      user.firstName = firstName;
-      user.lastName = lastName;
-      user.preferences = preferences;
-      user.surveyAnswers = surveyAnswers;
-      user.save();
-      let testObj = {
-        userId: user.id,
-        existing: true,
-      };
-      res.send(testObj);
-    } else {
-      TestUserModel.create({
-        cellphone,
-        active,
-        email,
-        firstName,
-        lastName,
-        passwordHash: null,
-        preferences,
-        settings: [],
-        surveyAnswers,
-      }, (err, newUser) => {
-          if (err) {
-            console.log(CSConstants.error, err);
-          } else {
-            console.log('User created');
-            let testObj = {
-              userId: newUser.id
-            };
-            res.send(testObj);
+  TestUserModel.findOne(
+    {
+      cellphone: cellphone
+    },
+    (err, user) => {
+      if (user) {
+        console.log("User exists");
+        user.active = active;
+        user.cellphone = cellphone;
+        user.email = email;
+        user.firstName = firstName;
+        user.lastName = lastName;
+        user.preferences = preferences;
+        user.surveyAnswers = surveyAnswers;
+        user.save();
+        let testObj = {
+          userId: user.id,
+          existing: true
+        };
+        res.send(testObj);
+      } else {
+        TestUserModel.create(
+          {
+            cellphone,
+            active,
+            email,
+            firstName,
+            lastName,
+            passwordHash: null,
+            preferences,
+            settings: [],
+            surveyAnswers
+          },
+          (err, newUser) => {
+            if (err) {
+              console.log(CSConstants.error, err);
+            } else {
+              console.log("User created");
+              let testObj = {
+                userId: newUser.id
+              };
+              res.send(testObj);
+            }
           }
-      });
+        );
+      }
     }
-  });
+  );
 });
 
-app.get('/validemail/:email', (req, res) => {
+app.get("/validemail/:email", (req, res) => {
   let isValid = validator.validate(req.params.email);
-  res.send({isValid});
+  res.send({ isValid });
 });
 
-app.get('/getphoneslist/:symbol', (req, res) => {
+app.get("/getphoneslist/:symbol", (req, res) => {
   let symbol = req.params.symbol;
   let phones = [];
-  StrategyModel.find({currencies: { $in: [symbol] }}, (err, strategies) => {
+  StrategyModel.find({ currencies: { $in: [symbol] } }, (err, strategies) => {
     if (err) {
-      console.log('Error: ' + err);
+      console.log("Error: " + err);
     } else {
       let userIds = [];
       for (let i = 0; i < strategies.length; i++) {
         userIds.push(mongoose.Types.ObjectId(strategies[i].userId));
       }
-      UserModel.find({
-        '_id': { $in: userIds}
-      }, function(err, users){
-        if (err) {
-          // handle error
-        } else if (users) {
-          for (let j = 0; j < users.length; j++) {
-            phones.push(users[j].cellphone);
+      UserModel.find(
+        {
+          _id: { $in: userIds }
+        },
+        function(err, users) {
+          if (err) {
+            // handle error
+          } else if (users) {
+            for (let j = 0; j < users.length; j++) {
+              phones.push(users[j].cellphone);
+            }
           }
+          res.send({ phonesList: phones });
         }
-        console.log('phones', phones);
-        res.send({phonesList: phones});
-      });
+      );
     }
   });
 });
 
-app.get('/getphoneslisttest/:symbol', (req, res) => {
+app.get("/getphoneslisttest/:symbol", (req, res) => {
   let symbol = req.params.symbol;
   let phones = [];
-  TestStrategyModel.find({currencies: { $in: [symbol] }}, (err, strategies) => {
-    if (err) {
-      console.log('Error: ' + err);
-    } else {
-      let userIds = [];
-      for (let i = 0; i < strategies.length; i++) {
-        userIds.push(mongoose.Types.ObjectId(strategies[i].userId));
-      }
-      TestUserModel.find({
-        '_id': { $in: userIds}
-      }, function(err, users){
-        if (err) {
-          // handle error
-        } else if (users) {
-          for (let j = 0; j < users.length; j++) {
-            phones.push(users[j].cellphone);
-          }
+  TestStrategyModel.find(
+    { currencies: { $in: [symbol] } },
+    (err, strategies) => {
+      if (err) {
+        console.log("Error: " + err);
+      } else {
+        let userIds = [];
+        for (let i = 0; i < strategies.length; i++) {
+          userIds.push(mongoose.Types.ObjectId(strategies[i].userId));
         }
-        console.log('phones', phones);
-        res.send({phonesList: phones});
-      });
+        TestUserModel.find(
+          {
+            _id: { $in: userIds }
+          },
+          function(err, users) {
+            if (err) {
+              // handle error
+            } else if (users) {
+              for (let j = 0; j < users.length; j++) {
+                phones.push(users[j].cellphone);
+              }
+            }
+            res.send({ phonesList: phones });
+          }
+        );
+      }
     }
-  });
+  );
 });
 
-app.get('/check/:number', (req, res) => {
+app.get("/check/:number", (req, res) => {
   verify(req.params.number)
     .then(valid => {
       res.send({ valid });
     })
     .catch(err => {
       console.error(err.message);
-      res.status(500).send('An unexpected error occurred');
+      res.status(500).send("An unexpected error occurred");
     });
 });
 
-app.get('*', function(req, res) {
+app.get("*", function(req, res) {
   res.status(404).send(CSConstants.nothingToSee);
 });
 

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const TestStrategySchema = new Schema({
@@ -8,8 +8,8 @@ const TestStrategySchema = new Schema({
   timeOutPeriodInHrs: Number,
   currencies: [Schema.Types.Mixed],
   exchanges: [Schema.Types.Mixed],
-  userId: { type: Schema.Types.ObjectId, ref: 'User' },
-  active: Boolean,
+  userId: { type: Schema.Types.ObjectId, ref: "User" },
+  active: Boolean
 });
 
-module.exports = mongoose.model('TestStrategy', TestStrategySchema);
+module.exports = mongoose.model("TestStrategy", TestStrategySchema);

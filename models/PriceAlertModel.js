@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const PriceAlertSchema = new Schema({
   _id: {
     symbol: String,
-    startTime: Number,
+    startTime: Number
   },
   history: [Schema.Types.Mixed],
   hoursOfDataStored: Number,
@@ -13,7 +13,7 @@ const PriceAlertSchema = new Schema({
   storedDataApiUrl: { type: String, default: null },
   alertId: Number,
   btcPriceAtAlertTime: Number,
-  usdPriceAtAlertTime: Number,
+  usdPriceAtAlertTime: Number
 });
 
-module.exports = mongoose.model('PriceAlert', PriceAlertSchema);
+module.exports = mongoose.model("PriceAlert", PriceAlertSchema);

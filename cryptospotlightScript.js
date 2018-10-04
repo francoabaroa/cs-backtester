@@ -1,26 +1,26 @@
-const axios = require('axios');
-const CSConstants = require('./constants/CSConstants');
-const mongoose = require('mongoose');
+const axios = require("axios");
+const CSConstants = require("./constants/CSConstants");
+const mongoose = require("mongoose");
 
-const request = require('request');
-const utils = require('./utils/utils');
+const request = require("request");
+const utils = require("./utils/utils");
 
-const PriceAlertModel = require('./models/PriceAlertModel');
-const ActiveAlertModel = require('./models/ActiveAlertModel');
-const StrategyModel = require('./models/StrategyModel');
+const PriceAlertModel = require("./models/PriceAlertModel");
+const ActiveAlertModel = require("./models/ActiveAlertModel");
+const StrategyModel = require("./models/StrategyModel");
 
-const TestPriceAlertModel = require('./tests/TestPriceAlertModel');
-const TestActiveAlertModel = require('./tests/TestActiveAlertModel');
-const TestStrategyModel = require('./tests/TestStrategyModel');
-const TestNotificationModel = require('./tests/TestNotificationModel');
-const TestUserModel = require('./tests/TestUserModel');
+const TestPriceAlertModel = require("./tests/TestPriceAlertModel");
+const TestActiveAlertModel = require("./tests/TestActiveAlertModel");
+const TestStrategyModel = require("./tests/TestStrategyModel");
+const TestNotificationModel = require("./tests/TestNotificationModel");
+const TestUserModel = require("./tests/TestUserModel");
 
-const convert = require('convert-units');
+const convert = require("convert-units");
 
-const REASON_ENUM = ['PROFIT', 'LOSS', 'TIMEOUT'];
+const REASON_ENUM = ["PROFIT", "LOSS", "TIMEOUT"];
 
 const headers = {
-  'Accept': CSConstants.mimeTypeJson,
+  Accept: CSConstants.mimeTypeJson
 };
 
 const options = {
@@ -39,72 +39,115 @@ mongoose.connect(
 let alertDataObjects = [];
 let successfullyCreated = 0;
 
-Date.prototype.getUnixTime = function() { return this.getTime()/1000|0 };
-if(!Date.now) Date.now = function() { return new Date(); }
-Date.time = function() { return Date.now().getUnixTime(); }
+Date.prototype.getUnixTime = function() {
+  return (this.getTime() / 1000) | 0;
+};
+if (!Date.now)
+  Date.now = function() {
+    return new Date();
+  };
+Date.time = function() {
+  return Date.now().getUnixTime();
+};
 
-function addToDBCollection(symbol, startTime, historicalData, hoursOfDataStored, alertId) {
-  PriceAlertModel.findOne({
-    _id: {
+function addToDBCollection(
+  symbol,
+  startTime,
+  historicalData,
+  hoursOfDataStored,
+  alertId
+) {
+  PriceAlertModel.findOne(
+    {
+      _id: {
         symbol: `${symbol}`,
-        startTime,
-    }
-  }, (err, alert) => {
-    if (alert) {
-      console.log(symbol + startTime + CSConstants.alertExists);
-    } else {
-      PriceAlertModel.create({
-        _id: {
-          symbol: `${symbol}`,
-          startTime,
-        },
-        history: historicalData,
-        hoursOfDataStored: hoursOfDataStored,
-        symbol: symbol,
-        startTime: startTime,
-        storedDataApiUrl: null,
-        alertId: alertId,
-        btcPriceAtAlertTime: 0,
-        usdPriceAtAlertTime: 0,
-      }, (err, alert) => {
-          if (err) {
-            console.log(CSConstants.error, err);
-          } else {
-            successfullyCreated++;
-            console.log(CSConstants.numOfRecordsSaved + successfullyCreated);
+        startTime
+      }
+    },
+    (err, alert) => {
+      if (alert) {
+        console.log(symbol + startTime + CSConstants.alertExists);
+      } else {
+        PriceAlertModel.create(
+          {
+            _id: {
+              symbol: `${symbol}`,
+              startTime
+            },
+            history: historicalData,
+            hoursOfDataStored: hoursOfDataStored,
+            symbol: symbol,
+            startTime: startTime,
+            storedDataApiUrl: null,
+            alertId: alertId,
+            btcPriceAtAlertTime: 0,
+            usdPriceAtAlertTime: 0
+          },
+          (err, alert) => {
+            if (err) {
+              console.log(CSConstants.error, err);
+            } else {
+              successfullyCreated++;
+              console.log(CSConstants.numOfRecordsSaved + successfullyCreated);
+            }
           }
-      });
+        );
+      }
     }
-  });
+  );
 }
 
-function updateDBCollection(symbol, startTime, historicalData, hoursOfDataStored, apiUrl) {
-  let alertTimePriceBTC = historicalData['btc'][0].open;
-  let alertTimePriceUSD = historicalData['usd'][0].open;
+function updateDBCollection(
+  symbol,
+  startTime,
+  historicalData,
+  hoursOfDataStored,
+  apiUrl
+) {
+  let alertTimePriceBTC = historicalData["btc"][0].open;
+  let alertTimePriceUSD = historicalData["usd"][0].open;
   let id = {
     symbol: `${symbol}`,
-    startTime,
+    startTime
   };
 
-  PriceAlertModel.update({ _id: id }, { $set: { history: historicalData, hoursOfDataStored: hoursOfDataStored, startTime: startTime, storedDataApiUrl: apiUrl, btcPriceAtAlertTime: alertTimePriceBTC, usdPriceAtAlertTime: alertTimePriceUSD}}, updateDBCallback);
+  PriceAlertModel.update(
+    { _id: id },
+    {
+      $set: {
+        history: historicalData,
+        hoursOfDataStored: hoursOfDataStored,
+        startTime: startTime,
+        storedDataApiUrl: apiUrl,
+        btcPriceAtAlertTime: alertTimePriceBTC,
+        usdPriceAtAlertTime: alertTimePriceUSD
+      }
+    },
+    updateDBCallback
+  );
 
   function updateDBCallback(err, numAffected) {
     if (err) {
       console.log(CSConstants.error + err);
     } else {
-      console.log(CSConstants.numOfDocsAffected + numAffected + ' : ' + symbol);
+      console.log(CSConstants.numOfDocsAffected + numAffected + " : " + symbol);
     }
   }
 }
 
 function hasValidData(data) {
-  return (data[0].high !== 0 && data[0].low !== 0 && data[0].open !== 0 && data[0].close !== 0);
+  return (
+    data[0].high !== 0 &&
+    data[0].low !== 0 &&
+    data[0].open !== 0 &&
+    data[0].close !== 0
+  );
 }
 
 function getHourlyHistoricalData(endTime, coinSymbol, limit, callback) {
-  const symbol = coinSymbol.replace(/\s/g, '');
-  const timeLimit = '&limit=' + limit;
-  const ts = '&toTs=' + endTime;
+  const symbol = coinSymbol.replace(/\s/g, "");
+  const timeLimit = "&limit=" + limit;
+  const ts = "&toTs=" + endTime;
   const historicalData = {};
 
   const usdConversionUrl =
@@ -123,37 +166,46 @@ function getHourlyHistoricalData(endTime, coinSymbol, limit, callback) {
     CSConstants.ccAggregate +
     ts;
 
-  if (symbol === 'BTC') {
-    axios.get(usdConversionUrl).then(res => {
-      if (res.data.Data.length > 0) {
-        historicalData['btc'] = res.data.Data;
-        historicalData['usd'] = res.data.Data;
-        console.log(CSConstants.validHistory + symbol);
-      }
-      callback(historicalData, usdConversionUrl);
-    }).catch(function (error) {
-      console.log(CSConstants.axiosError, error);
-    });
-  } else {
-    axios.get(btcConversionUrl).then(btcResponse => {
-      axios.get(usdConversionUrl).then(usdResponse => {
-        let btcData = btcResponse.data.Data;
-        let usdData = usdResponse.data.Data;
-
-        if (btcData.length > 0 && usdData.length > 0) {
-          if ((hasValidData(btcData)) && (hasValidData(usdData))) {
-            historicalData['btc'] = btcData;
-            historicalData['usd'] = usdData;
-            console.log(CSConstants.validHistory + symbol);
-          }
+  if (symbol === "BTC") {
+    axios
+      .get(usdConversionUrl)
+      .then(res => {
+        if (res.data.Data.length > 0) {
+          historicalData["btc"] = res.data.Data;
+          historicalData["usd"] = res.data.Data;
+          console.log(CSConstants.validHistory + symbol);
         }
         callback(historicalData, usdConversionUrl);
-      }).catch(function (error) {
+      })
+      .catch(function(error) {
         console.log(CSConstants.axiosError, error);
       });
-    }).catch(function (error) {
-      console.log(CSConstants.axiosError, error);
-    });
+  } else {
+    axios
+      .get(btcConversionUrl)
+      .then(btcResponse => {
+        axios
+          .get(usdConversionUrl)
+          .then(usdResponse => {
+            let btcData = btcResponse.data.Data;
+            let usdData = usdResponse.data.Data;
+
+            if (btcData.length > 0 && usdData.length > 0) {
+              if (hasValidData(btcData) && hasValidData(usdData)) {
+                historicalData["btc"] = btcData;
+                historicalData["usd"] = usdData;
+                console.log(CSConstants.validHistory + symbol);
+              }
+            }
+            callback(historicalData, usdConversionUrl);
+          })
+          .catch(function(error) {
+            console.log(CSConstants.axiosError, error);
+          });
+      })
+      .catch(function(error) {
+        console.log(CSConstants.axiosError, error);
+      });
   }
 }
 
@@ -175,16 +227,29 @@ function updateAlerts(alerts) {
   function throttleIteration() {
     const coinSymbol = alerts[i]._id.symbol;
     const alertStartTime = alerts[i]._id.startTime;
-    const {endTime, days} = utils.findClosestTimestampWithData(alertStartTime);
+    const { endTime, days } = utils.findClosestTimestampWithData(
+      alertStartTime
+    );
     const daysInHours = days * 24;
 
-    getHourlyHistoricalData(endTime, coinSymbol, daysInHours, (data, apiURL) => {
-      if (data.btc && data.usd) {
-        updateDBCollection(coinSymbol, alertStartTime, data, daysInHours, apiURL);
-      } else {
-        console.log(CSConstants.dataEmpty + data + apiURL);
+    getHourlyHistoricalData(
+      endTime,
+      coinSymbol,
+      daysInHours,
+      (data, apiURL) => {
+        if (data.btc && data.usd) {
+          updateDBCollection(
+            coinSymbol,
+            alertStartTime,
+            data,
+            daysInHours,
+            apiURL
+          );
+        } else {
+          console.log(CSConstants.dataEmpty + data + apiURL);
+        }
       }
-    });
+    );
     i++;
     if (i < alertsLength) {
       setTimeout(throttleIteration, twoSeconds);
@@ -198,7 +263,7 @@ function updateAlerts(alerts) {
 function checkAlertDataAndUpdate() {
   setTimeout(throttleUpdate, 5000);
   function throttleUpdate() {
-    PriceAlertModel.find( {hoursOfDataStored: { $ne: 168 } }, (err, alerts) => {
+    PriceAlertModel.find({ hoursOfDataStored: { $ne: 168 } }, (err, alerts) => {
       if (err) {
         console.log(CSConstants.error, err);
       } else if (alerts.length > 0) {
@@ -238,55 +303,65 @@ function addActiveAlertToDB(
   ageInHrs,
   active
 ) {
-  ActiveAlertModel.findOne({
-    alertId: alertId
-  }, (err, alert) => {
-    if (alert) {
-      alert.assignedStrategiesList = assignedStrategiesList;
-      alert.save();
-      console.log('ActiveAlert exists', assignedStrategiesList);
-    } else {
-      ActiveAlertModel.create({
-        alertId: alertId,
-        currentBtcPrice,
-        currentUsdPrice,
-        notifiedStrategiesList,
-        assignedStrategiesList,
-        performancePercent,
-        timeSinceAlertedInHrs,
-        ageInHrs,
-        active: true,
-      }, (err, alert) => {
-          if (err) {
-            console.log(CSConstants.error, err, '- Active Alert Creation Failure');
-          } else {
-            console.log('ActiveAlert: ');
+  ActiveAlertModel.findOne(
+    {
+      alertId: alertId
+    },
+    (err, alert) => {
+      if (alert) {
+        alert.assignedStrategiesList = assignedStrategiesList;
+        alert.save();
+        console.log("ActiveAlert exists", assignedStrategiesList);
+      } else {
+        ActiveAlertModel.create(
+          {
+            alertId: alertId,
+            currentBtcPrice,
+            currentUsdPrice,
+            notifiedStrategiesList,
+            assignedStrategiesList,
+            performancePercent,
+            timeSinceAlertedInHrs,
+            ageInHrs,
+            active: true
+          },
+          (err, alert) => {
+            if (err) {
+              console.log(
+                CSConstants.error,
+                err,
+                "- Active Alert Creation Failure"
+              );
+            } else {
+              console.log("ActiveAlert: ");
+            }
           }
-      });
+        );
+      }
     }
-  });
+  );
 }
 
 function createNewActiveAlerts() {
-  console.log('DONE RUNNING 1. CALLING CREATE NEW ACTIVE ALERTS');
+  console.log("DONE RUNNING 1. CALLING CREATE NEW ACTIVE ALERTS");
   PriceAlertModel.find((err, alerts) => {
     if (err) {
-      console.log('Error: ' + err);
+      console.log("Error: " + err);
     } else {
       for (let i = 0; i < alerts.length; i++) {
         let oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds;
-        let startTime = convert(Math.abs(alerts[i].startTime)).from('s').to('ms');
+        let startTime = convert(Math.abs(alerts[i].startTime))
+          .from("s")
+          .to("ms");
         let endTime = new Date();
         let difference = startTime - endTime.getTime();
-        let msToHours = convert(Math.abs(difference)).from('ms').to('h');
-        let differenceInDays = Math.round(
-          Math.abs(
-            (difference) / (oneDay)
-          )
-        );
+        let msToHours = convert(Math.abs(difference))
+          .from("ms")
+          .to("h");
+        let differenceInDays = Math.round(Math.abs(difference / oneDay));
         if (differenceInDays <= 7) {
-          findStrategiesForAlert(alerts[i].symbol, (assignedStrategies) => {
-            console.log('assignedStrategies', assignedStrategies);
+          findStrategiesForAlert(alerts[i].symbol, assignedStrategies => {
+            console.log("assignedStrategies", assignedStrategies);
             addActiveAlertToDB(
               alerts[i]._id, // alertId
               null, // currentBTCPrice
@@ -300,7 +375,7 @@ function createNewActiveAlerts() {
             );
           });
         } else {
-          console.log('Price Alert is older than 7 days');
+          console.log("Price Alert is older than 7 days");
         }
       }
       checkActiveAlerts();
@@ -309,17 +384,20 @@ function createNewActiveAlerts() {
 }
 
 function findStrategiesForAlert(symbol, callback) {
-  TestStrategyModel.find({currencies: { $in: [symbol] }}, (err, strategies) => {
-    if (err) {
-      console.log('Error: ' + err);
-    } else {
-      let assignedStrategyIDList = [];
-      for (let i = 0; i < strategies.length; i++) {
-        assignedStrategyIDList.push(strategies[i]._id);
+  TestStrategyModel.find(
+    { currencies: { $in: [symbol] } },
+    (err, strategies) => {
+      if (err) {
+        console.log("Error: " + err);
+      } else {
+        let assignedStrategyIDList = [];
+        for (let i = 0; i < strategies.length; i++) {
+          assignedStrategyIDList.push(strategies[i]._id);
+        }
+        callback(assignedStrategyIDList);
       }
-      callback(assignedStrategyIDList);
     }
-  });
+  );
 }
 
 function createNotification(
@@ -329,201 +407,254 @@ function createNotification(
   result,
   reasonEnum,
   strategyTimestamp,
-  activeAlertTimestamp,
+  activeAlertTimestamp
 ) {
   const strategyDate = new Date(strategyTimestamp);
   const activeAlertDate = new Date(activeAlertTimestamp);
   let notificationId = userId + alertId.startTime + alertId.symbol;
-  TestNotificationModel.findOne({
-    notificationId: notificationId
-  }, (err, notification) => {
-    if (notification) {
-      console.log('Notification object already exists');
-    } else if (strategyDate <  activeAlertDate) {
-      TestNotificationModel.create({
-        notificationId,
-        userId,
-        alertId: alertId,
-        strategyId,
-        result,
-        reason: reasonEnum,
-        notified: false,
-      }, (err, notification) => {
-          if (err) {
-            console.log(CSConstants.error, err);
-          } else {
-            console.log('TestNotificationModel: ', notification);
+  TestNotificationModel.findOne(
+    {
+      notificationId: notificationId
+    },
+    (err, notification) => {
+      if (notification) {
+        console.log("Notification object already exists");
+      } else if (strategyDate < activeAlertDate) {
+        TestNotificationModel.create(
+          {
+            notificationId,
+            userId,
+            alertId: alertId,
+            strategyId,
+            result,
+            reason: reasonEnum,
+            notified: false
+          },
+          (err, notification) => {
+            if (err) {
+              console.log(CSConstants.error, err);
+            } else {
+              console.log("TestNotificationModel: ", notification);
+            }
           }
-      });
+        );
+      }
     }
-  });
+  );
 }
 
 function calculatePerfPercent(currentPrice, startPrice) {
   // default to BTC, unless it IS BTC
-  const diff = (currentPrice/startPrice);
+  const diff = currentPrice / startPrice;
   let percent = 1 - diff;
   const negative = percent < 0 ? false : true;
   const finalResult = percent * 100;
-  console.log('currentPrice', currentPrice, 'startPrice', startPrice, 'finalResult', finalResult);
+  console.log(
+    "currentPrice",
+    currentPrice,
+    "startPrice",
+    startPrice,
+    "finalResult",
+    finalResult
+  );
   return negative ? -Math.abs(finalResult) : Math.abs(finalResult);
 }
 
 function sendSms(userToNotify, reason, result, symbol) {
   // Twilio API
   console.log(
-    'User: ' +
-    userToNotify +
-    ' - Reason: ' +
-    reason +
-    ' - Result: ' +
-    result +
-    ' - Symbol: ' +
-    symbol
+    "User: " +
+      userToNotify +
+      " - Reason: " +
+      reason +
+      " - Result: " +
+      result +
+      " - Symbol: " +
+      symbol
   );
   return;
 }
 
 function checkActiveAlerts(error, response, body) {
-  console.log('DONE RUNNING 2. CALLING CHECK ACTIVE ALERTS');
-  ActiveAlertModel.find({ ageInHrs: { $lte: 168}, active: true }, (err, activeAlerts) => {
-    if (err) {
+  console.log("DONE RUNNING 2. CALLING CHECK ACTIVE ALERTS");
+  ActiveAlertModel.find(
+    { ageInHrs: { $lte: 168 }, active: true },
+    (err, activeAlerts) => {
+      if (err) {
         res.send(err);
-    } else {
-      for (let i = 0; i < activeAlerts.length; i++) {
-        PriceAlertModel.findOne({
-          _id: activeAlerts[i].alertId
-        }, (err, alert) => {
-          if (alert) {
-            const savedDocs = {};
-            let symbol = alert.symbol;
-            let currentPrice = utils.getCurrentPrice(symbol, (price) => {
-              let currPrice = price;
-              if (symbol === 'BTC') {
-                activeAlerts[i].currentUsdPrice = currPrice;
-              } else {
-                activeAlerts[i].currentBtcPrice = currPrice;
-              }
+      } else {
+        for (let i = 0; i < activeAlerts.length; i++) {
+          PriceAlertModel.findOne(
+            {
+              _id: activeAlerts[i].alertId
+            },
+            (err, alert) => {
+              if (alert) {
+                const savedDocs = {};
+                let symbol = alert.symbol;
+                let currentPrice = utils.getCurrentPrice(symbol, price => {
+                  let currPrice = price;
+                  if (symbol === "BTC") {
+                    activeAlerts[i].currentUsdPrice = currPrice;
+                  } else {
+                    activeAlerts[i].currentBtcPrice = currPrice;
+                  }
 
-              let startPrice = symbol === 'BTC' ? alert.usdPriceAtAlertTime : alert.btcPriceAtAlertTime;
-              let perfPercent = parseFloat(
-                calculatePerfPercent(
-                  currPrice,
-                  startPrice,
-                )
-              );
+                  let startPrice =
+                    symbol === "BTC"
+                      ? alert.usdPriceAtAlertTime
+                      : alert.btcPriceAtAlertTime;
+                  let perfPercent = parseFloat(
+                    calculatePerfPercent(currPrice, startPrice)
+                  );
 
-              if (!isFinite(perfPercent)) {
-                perfPercent = 0;
-              }
+                  if (!isFinite(perfPercent)) {
+                    perfPercent = 0;
+                  }
 
-              let startTime = convert(Math.abs(alert.startTime)).from('s').to('ms');
-              let endTime = new Date();
-              let difference = startTime - endTime.getTime();
-              let msToHours = convert(Math.abs(difference)).from('ms').to('h');
+                  let startTime = convert(Math.abs(alert.startTime))
+                    .from("s")
+                    .to("ms");
+                  let endTime = new Date();
+                  let difference = startTime - endTime.getTime();
+                  let msToHours = convert(Math.abs(difference))
+                    .from("ms")
+                    .to("h");
 
-              activeAlerts[i].performancePercent = perfPercent;
-              activeAlerts[i].timeSinceAlertedInHrs = msToHours;
-              activeAlerts[i].ageInHrs = msToHours;
+                  activeAlerts[i].performancePercent = perfPercent;
+                  activeAlerts[i].timeSinceAlertedInHrs = msToHours;
+                  activeAlerts[i].ageInHrs = msToHours;
 
-              if (activeAlerts[i].assignedStrategiesList.length === 0) {
-                if (activeAlerts[i].timeSinceAlertedInHrs > 168) {
-                  activeAlerts[i].active = false;
-                }
-                activeAlerts[i].save();
-              } else {
-                // default to BTC ??
-                for (let j = 0; j < activeAlerts[i].assignedStrategiesList.length; j++) {
-                  TestStrategyModel.findOne({_id: activeAlerts[i].assignedStrategiesList[j], currencies: { $in: [symbol] } }, (err, strategy) => {
-                    if (strategy) {
-                      let profitHitFlag = false;
-                      let stopLossHitFlag = false;
-                      let timeOutFlag = false;
-                      let reasonEnum = null;
-                      let result = null;
-
-                      if (strategy.timeOutPeriodInHrs <= activeAlerts[i].timeSinceAlertedInHrs) {
-                        if (activeAlerts[i].timeSinceAlertedInHrs >= 168) {
-                          activeAlerts[i].active = false;
-                        }
-                        timeOutFlag = true;
-                      } else {
-                        if (activeAlerts[i].performancePercent >= 0 && isFinite(activeAlerts[i].performancePercent) && activeAlerts[i].performancePercent !== null) {
-                          if (strategy.profitTakePercent <= activeAlerts[i].performancePercent) {
-                            profitHitFlag = true;
-                          }
-                        } else if (activeAlerts[i].performancePercent < 0 && isFinite(activeAlerts[i].performancePercent) && activeAlerts[i].performancePercent !== null) {
-                          if (strategy.stopLossPercent <= Math.abs(activeAlerts[i].performancePercent)) {
-                            stopLossHitFlag = true;
-                          }
-                        }
-                      }
-
-                      if (timeOutFlag) {
-                        result = activeAlerts[i].timeSinceAlertedInHrs;
-                        console.log(REASON_ENUM[2]);
-                        reasonEnum = REASON_ENUM[2];
-                      } else if (stopLossHitFlag) {
-                        result = activeAlerts[i].performancePercent;
-                        console.log(REASON_ENUM[1]);
-                        reasonEnum = REASON_ENUM[1];
-                      } else if (profitHitFlag) {
-                        result = activeAlerts[i].performancePercent;
-                        console.log(REASON_ENUM[0]);
-                        reasonEnum = REASON_ENUM[0];
-                      }
-
-                      if (savedDocs[activeAlerts[i].id] === undefined) {
-                        savedDocs[activeAlerts[i].id] = activeAlerts[i];
-                        if (activeAlerts[i].timeSinceAlertedInHrs > 168) {
-                          activeAlerts[i].active = false;
-                        }
-                        activeAlerts[i].save();
-                      }
-
-                      if (reasonEnum !== null) {
-                        createNotification(
-                          strategy.userId,
-                          activeAlerts[i].alertId,
-                          strategy.id,
-                          result,
-                          reasonEnum,
-                          strategy._id.getTimestamp(),
-                          activeAlerts[i]._id.getTimestamp(),
-                        );
-                      }
-                    } else {
-                      console.log('Strategy not found!');
+                  if (activeAlerts[i].assignedStrategiesList.length === 0) {
+                    if (activeAlerts[i].timeSinceAlertedInHrs > 168) {
+                      activeAlerts[i].active = false;
                     }
-                  });
-                }
+                    activeAlerts[i].save();
+                  } else {
+                    // default to BTC ??
+                    for (
+                      let j = 0;
+                      j < activeAlerts[i].assignedStrategiesList.length;
+                      j++
+                    ) {
+                      TestStrategyModel.findOne(
+                        {
+                          _id: activeAlerts[i].assignedStrategiesList[j],
+                          currencies: { $in: [symbol] }
+                        },
+                        (err, strategy) => {
+                          if (strategy) {
+                            let profitHitFlag = false;
+                            let stopLossHitFlag = false;
+                            let timeOutFlag = false;
+                            let reasonEnum = null;
+                            let result = null;
+
+                            if (
+                              strategy.timeOutPeriodInHrs <=
+                              activeAlerts[i].timeSinceAlertedInHrs
+                            ) {
+                              if (
+                                activeAlerts[i].timeSinceAlertedInHrs >= 168
+                              ) {
+                                activeAlerts[i].active = false;
+                              }
+                              timeOutFlag = true;
+                            } else {
+                              if (
+                                activeAlerts[i].performancePercent >= 0 &&
+                                isFinite(activeAlerts[i].performancePercent) &&
+                                activeAlerts[i].performancePercent !== null
+                              ) {
+                                if (
+                                  strategy.profitTakePercent <=
+                                  activeAlerts[i].performancePercent
+                                ) {
+                                  profitHitFlag = true;
+                                }
+                              } else if (
+                                activeAlerts[i].performancePercent < 0 &&
+                                isFinite(activeAlerts[i].performancePercent) &&
+                                activeAlerts[i].performancePercent !== null
+                              ) {
+                                if (
+                                  strategy.stopLossPercent <=
+                                  Math.abs(activeAlerts[i].performancePercent)
+                                ) {
+                                  stopLossHitFlag = true;
+                                }
+                              }
+                            }
+
+                            if (timeOutFlag) {
+                              result = activeAlerts[i].timeSinceAlertedInHrs;
+                              console.log(REASON_ENUM[2]);
+                              reasonEnum = REASON_ENUM[2];
+                            } else if (stopLossHitFlag) {
+                              result = activeAlerts[i].performancePercent;
+                              console.log(REASON_ENUM[1]);
+                              reasonEnum = REASON_ENUM[1];
+                            } else if (profitHitFlag) {
+                              result = activeAlerts[i].performancePercent;
+                              console.log(REASON_ENUM[0]);
+                              reasonEnum = REASON_ENUM[0];
+                            }
+
+                            if (savedDocs[activeAlerts[i].id] === undefined) {
+                              savedDocs[activeAlerts[i].id] = activeAlerts[i];
+                              if (activeAlerts[i].timeSinceAlertedInHrs > 168) {
+                                activeAlerts[i].active = false;
+                              }
+                              activeAlerts[i].save();
+                            }
+
+                            if (reasonEnum !== null) {
+                              createNotification(
+                                strategy.userId,
+                                activeAlerts[i].alertId,
+                                strategy.id,
+                                result,
+                                reasonEnum,
+                                strategy._id.getTimestamp(),
+                                activeAlerts[i]._id.getTimestamp()
+                              );
+                            }
+                          } else {
+                            console.log("Strategy not found!");
+                          }
+                        }
+                      );
+                    }
+                  }
+                });
+              } else {
+                console.log(
+                  "PriceAlert not found for ActiveAlert",
+                  activeAlerts[i].alertId
+                );
               }
-
-
-            });
-          } else {
-            console.log('PriceAlert not found for ActiveAlert', activeAlerts[i].alertId);
-          }
-        });
+            }
+          );
+        }
+        // console.log('Done Running');
+        console.log("DONE RUNNING 3");
+        // checkNotifications();
       }
-      // console.log('Done Running');
-      console.log('DONE RUNNING 3');
-      // checkNotifications();
     }
-  });
+  );
 }
 
 function checkNotifications(error, response, body) {
-  TestNotificationModel.find({notified: false}, (err, notification) => {
+  TestNotificationModel.find({ notified: false }, (err, notification) => {
     if (err) {
-        res.send(err);
+      res.send(err);
     } else {
       for (let i = 0; i < notification.length; i++) {
         let userToNotify = notification.userId;
         let reason = notification.reason;
         let result = 0;
         // pass in coin symbol using alertId reference
-        sendSms(userToNotify, reason, result, /* COIN SYMBOL */);
+        sendSms(userToNotify, reason, result /* COIN SYMBOL */);
         // TODO: need to add ID to notifiedStrategiesList of activeAlertModel
         notification.notified = true;
         notification.save();
@@ -536,7 +667,6 @@ function script() {
   request(options, getLatestPriceAlertData);
 }
 
-
 module.exports = {
-  script: script,
+  script: script
 };
