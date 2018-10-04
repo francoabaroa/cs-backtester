@@ -336,7 +336,7 @@ app.post('/createtestuser', function(req, res) {
       user.surveyAnswers = surveyAnswers;
       user.save();
       let testObj = {
-        userId: user.id
+        userId: user.id,
         existing: true,
       };
       res.send(testObj);
