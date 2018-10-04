@@ -14,7 +14,7 @@ const ActiveAlertSchema = new Schema({
   notifiedStrategiesList: [{ type: Schema.Types.ObjectId, ref: "Strategy" }],
   assignedStrategiesList: [{ type: Schema.Types.ObjectId, ref: "Strategy" }],
   /*
-    performancePercent can be +/-;
+    performancePercent can be positive or negative +/-;
     +, profit
     -, loss
   */

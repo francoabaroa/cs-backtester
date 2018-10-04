@@ -16,8 +16,6 @@ const NotificationSchema = new Schema({
     type: String,
     unique: true
   },
-  // need to set a unique ID that is alertId + userId
-  // Does alertId have to be unique?
   alertId: {
     type: {
       symbol: String,

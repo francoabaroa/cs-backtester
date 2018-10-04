@@ -7,13 +7,9 @@ const utils = require("./utils/utils");
 
 const PriceAlertModel = require("./models/PriceAlertModel");
 const ActiveAlertModel = require("./models/ActiveAlertModel");
+const NotificationModel = require("./models/NotificationModel");
 const StrategyModel = require("./models/StrategyModel");
-
-const TestPriceAlertModel = require("./tests/TestPriceAlertModel");
-const TestActiveAlertModel = require("./tests/TestActiveAlertModel");
-const TestStrategyModel = require("./tests/TestStrategyModel");
-const TestNotificationModel = require("./tests/TestNotificationModel");
-const TestUserModel = require("./tests/TestUserModel");
+const UserModel = require("./models/UserModel");
 
 const convert = require("convert-units");
 
@@ -343,7 +339,6 @@ function addActiveAlertToDB(
 }
 
 function createNewActiveAlerts() {
-  console.log("DONE RUNNING 1. CALLING CREATE NEW ACTIVE ALERTS");
   PriceAlertModel.find((err, alerts) => {
     if (err) {
       console.log("Error: " + err);
@@ -384,20 +379,17 @@ function createNewActiveAlerts() {
 }
 
 function findStrategiesForAlert(symbol, callback) {
-  TestStrategyModel.find(
-    { currencies: { $in: [symbol] } },
-    (err, strategies) => {
-      if (err) {
-        console.log("Error: " + err);
-      } else {
-        let assignedStrategyIDList = [];
-        for (let i = 0; i < strategies.length; i++) {
-          assignedStrategyIDList.push(strategies[i]._id);
-        }
-        callback(assignedStrategyIDList);
+  StrategyModel.find({ currencies: { $in: [symbol] } }, (err, strategies) => {
+    if (err) {
+      console.log("Error: " + err);
+    } else {
+      let assignedStrategyIDList = [];
+      for (let i = 0; i < strategies.length; i++) {
+        assignedStrategyIDList.push(strategies[i]._id);
       }
+      callback(assignedStrategyIDList);
     }
-  );
+  });
 }
 
 function createNotification(
@@ -412,7 +404,7 @@ function createNotification(
   const strategyDate = new Date(strategyTimestamp);
   const activeAlertDate = new Date(activeAlertTimestamp);
   let notificationId = userId + alertId.startTime + alertId.symbol;
-  TestNotificationModel.findOne(
+  NotificationModel.findOne(
     {
       notificationId: notificationId
     },
@@ -420,7 +412,7 @@ function createNotification(
       if (notification) {
         console.log("Notification object already exists");
       } else if (strategyDate < activeAlertDate) {
-        TestNotificationModel.create(
+        NotificationModel.create(
           {
             notificationId,
             userId,
@@ -434,7 +426,7 @@ function createNotification(
             if (err) {
               console.log(CSConstants.error, err);
             } else {
-              console.log("TestNotificationModel: ", notification);
+              console.log("NotificationModel: ", notification);
             }
           }
         );
@@ -460,11 +452,12 @@ function calculatePerfPercent(currentPrice, startPrice) {
   return negative ? -Math.abs(finalResult) : Math.abs(finalResult);
 }
 
-function sendSms(userToNotify, reason, result, symbol) {
+function sendSms(userPhone, reason, result, symbol, callback) {
   // Twilio API
+  // upon successful delivery of sms, please execute callback
   console.log(
     "User: " +
-      userToNotify +
+      userPhone +
       " - Reason: " +
       reason +
       " - Result: " +
@@ -472,11 +465,12 @@ function sendSms(userToNotify, reason, result, symbol) {
       " - Symbol: " +
       symbol
   );
+  // upon successful delivery
+  /* callback(); */
   return;
 }
 
 function checkActiveAlerts(error, response, body) {
-  console.log("DONE RUNNING 2. CALLING CHECK ACTIVE ALERTS");
   ActiveAlertModel.find(
     { ageInHrs: { $lte: 168 }, active: true },
     (err, activeAlerts) => {
@@ -537,7 +531,7 @@ function checkActiveAlerts(error, response, body) {
                       j < activeAlerts[i].assignedStrategiesList.length;
                       j++
                     ) {
-                      TestStrategyModel.findOne(
+                      StrategyModel.findOne(
                         {
                           _id: activeAlerts[i].assignedStrategiesList[j],
                           currencies: { $in: [symbol] }
@@ -636,28 +630,44 @@ function checkActiveAlerts(error, response, body) {
             }
           );
         }
-        // console.log('Done Running');
-        console.log("DONE RUNNING 3");
-        // checkNotifications();
+        checkNotifications();
       }
     }
   );
 }
 
 function checkNotifications(error, response, body) {
-  TestNotificationModel.find({ notified: false }, (err, notification) => {
+  NotificationModel.find({ notified: false }, (err, notifications) => {
     if (err) {
       res.send(err);
     } else {
-      for (let i = 0; i < notification.length; i++) {
-        let userToNotify = notification.userId;
-        let reason = notification.reason;
-        let result = 0;
-        // pass in coin symbol using alertId reference
-        sendSms(userToNotify, reason, result /* COIN SYMBOL */);
-        // TODO: need to add ID to notifiedStrategiesList of activeAlertModel
+      function markNotificationNotified(notification) {
         notification.notified = true;
         notification.save();
+      }
+      for (let i = 0; i < notifications.length; i++) {
+        let userToNotify = notifications[i].userId;
+        let reason = notifications[i].reason;
+        let result = notifications[i].result;
+        let symbol = notifications[i].alertId.symbol;
+        UserModel.findOne(
+          {
+            _id: userToNotify
+          },
+          (err, user) => {
+            if (user) {
+              sendSms(
+                user.cellphone,
+                reason,
+                result,
+                symbol,
+                markNotificationNotified.bind(null, notifications[i])
+              );
+            } else {
+              console.log("User Not Found");
+            }
+          }
+        );
       }
     }
   });

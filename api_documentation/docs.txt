@@ -1,0 +1,94 @@
+API DOCUMENTATION
+
+
+- GET /alerts
+
+  Get all price alerts in DB
+
+
+--------------------------------------------------------------------------------
+
+
+- GET /backest
+
+  Parameters:
+    loss: REQUIRED
+    profit: REQUIRED
+    timeOut: REQUIRED
+    top: OPTIONAL
+    coins: OPTIONAL
+    includeFees: OPTIONAL
+    start: OPTIONAL
+    end: OPTIONAL
+    timeDelay: OPTIONAL
+
+  Examples:
+
+  http://cs-price-alerts.herokuapp.com/backtest?profit=10&loss=5&timeOut=24&coins=["ONT"]
+
+  http://cs-price-alerts.herokuapp.com/backtest?profit=10&loss=5&timeOut=24&top=100&includeFees=true
+
+  https://cs-price-alerts.herokuapp.com/backtest?profit=50&loss=50&timeOut=24&includeFees=false&coins=["BTC","ETH"]&start=1532478472&end=1535070472
+
+
+--------------------------------------------------------------------------------
+
+
+- GET /alertsymbols
+
+  Get all of the symbols for coins Cryptospotlight has alerted on
+
+
+--------------------------------------------------------------------------------
+
+
+- GET /top
+
+  Get top 5, top 10, top 50, top 100, top 250 coins by Market cap from Coinmarketcap
+
+
+--------------------------------------------------------------------------------
+
+
+- POST /savestrategy
+
+  Parameters: JSON object {
+      active: boolean,
+      currencies: [],
+      exchanges: [],
+      profitTakePercent: 5,
+      stopLossPercent: 10,
+      timeOutPeriodInHrs: 24,
+      userId: this.state.userId
+    };
+
+
+--------------------------------------------------------------------------------
+
+
+- POST /createuser
+
+  Parameters: JSON object {
+      active: boolean,
+      cellphone: number || string,
+      email: string,
+      firstName: string,
+      lastName: string,
+      preferences: [],
+      surveyAnswers: this.props.surveyAnswers (array)
+    };
+
+  Response: { userId: userId }
+
+
+--------------------------------------------------------------------------------
+
+
+- GET /getphoneslist/:symbol
+
+  Example: https://cs-price-alerts.herokuapp.com/check/14157012311
+
+  Response: {"valid":true}
+
+
+--------------------------------------------------------------------------------

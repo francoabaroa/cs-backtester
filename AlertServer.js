@@ -92,16 +92,6 @@ app.get("/backtest", (req, res) => {
   });
 });
 
-app.get("/pricealerts", (req, res) => {
-  PriceAlertModel.find((err, alerts) => {
-    if (err) {
-      res.send(err);
-    } else {
-      res.send(alerts);
-    }
-  });
-});
-
 app.get("/alertsymbols", (req, res) => {
   PriceAlertModel.find({ hoursOfDataStored: { $gte: 1 } }, (err, alerts) => {
     if (err) {
@@ -223,30 +213,6 @@ app.get("/top", (req, res) => {
   }
 });
 
-/*
-app.get('/testalerts', (req, res) => {
-  TestModel.find((err, alerts) => {
-    if (err) {
-        res.send(err);
-    } else {
-        res.send(alerts);
-    }
-  });
-});
-
-app.get('/backtesttest', (req, res) => {
-  const {loss, profit, timeOut} = utils.getUrlParams(req.originalUrl);
-
-  TestModel.find({ hoursOfDataStored: { $gte: timeOut} }, (err, alerts) => {
-    if (err) {
-      res.send(err);
-    } else {
-      res.send(utils.processAlerts(alerts, profit, loss, timeOut));
-    }
-  });
-});
-*/
-
 app.post("/savestrategy", function(req, res) {
   const userId = req.body.userId;
   const active = req.body.active;
@@ -270,7 +236,6 @@ app.post("/savestrategy", function(req, res) {
       if (err) {
         console.log(CSConstants.error, err);
       } else {
-        console.log("Strategy saved: ", strategy.id);
         res.send("Strategy saved");
       }
     }
@@ -292,7 +257,6 @@ app.post("/createuser", function(req, res) {
     },
     (err, user) => {
       if (user) {
-        console.log("User exists");
         user.active = active;
         user.cellphone = cellphone;
         user.email = email;
@@ -301,10 +265,10 @@ app.post("/createuser", function(req, res) {
         user.preferences = preferences;
         user.surveyAnswers = surveyAnswers;
         user.save();
-        let testObj = {
+        let response = {
           userId: user.id
         };
-        res.send(testObj);
+        res.send(response);
       } else {
         UserModel.create(
           {
@@ -322,11 +286,10 @@ app.post("/createuser", function(req, res) {
             if (err) {
               console.log(CSConstants.error, err);
             } else {
-              console.log("User created");
-              let testObj = {
+              let response = {
                 userId: newUser.id
               };
-              res.send(testObj);
+              res.send(response);
             }
           }
         );
@@ -358,7 +321,6 @@ app.post("/saveteststrategy", function(req, res) {
       if (err) {
         console.log(CSConstants.error, err);
       } else {
-        console.log("Strategy saved: ", strategy.id);
         res.send("Strategy saved");
       }
     }
@@ -380,7 +342,6 @@ app.post("/createtestuser", function(req, res) {
     },
     (err, user) => {
       if (user) {
-        console.log("User exists");
         user.active = active;
         user.cellphone = cellphone;
         user.email = email;
@@ -389,11 +350,11 @@ app.post("/createtestuser", function(req, res) {
         user.preferences = preferences;
         user.surveyAnswers = surveyAnswers;
         user.save();
-        let testObj = {
+        let response = {
           userId: user.id,
           existing: true
         };
-        res.send(testObj);
+        res.send(response);
       } else {
         TestUserModel.create(
           {
@@ -411,11 +372,10 @@ app.post("/createtestuser", function(req, res) {
             if (err) {
               console.log(CSConstants.error, err);
             } else {
-              console.log("User created");
-              let testObj = {
+              let response = {
                 userId: newUser.id
               };
-              res.send(testObj);
+              res.send(response);
             }
           }
         );
@@ -434,7 +394,7 @@ app.get("/getphoneslist/:symbol", (req, res) => {
   let phones = [];
   StrategyModel.find({ currencies: { $in: [symbol] } }, (err, strategies) => {
     if (err) {
-      console.log("Error: " + err);
+      console.log(CSConstants.error, err);
     } else {
       let userIds = [];
       for (let i = 0; i < strategies.length; i++) {
@@ -446,7 +406,7 @@ app.get("/getphoneslist/:symbol", (req, res) => {
         },
         function(err, users) {
           if (err) {
-            // handle error
+            console.log(CSConstants.error, err);
           } else if (users) {
             for (let j = 0; j < users.length; j++) {
               phones.push(users[j].cellphone);
@@ -466,7 +426,7 @@ app.get("/getphoneslisttest/:symbol", (req, res) => {
     { currencies: { $in: [symbol] } },
     (err, strategies) => {
       if (err) {
-        console.log("Error: " + err);
+        console.log(CSConstants.error, err);
       } else {
         let userIds = [];
         for (let i = 0; i < strategies.length; i++) {
@@ -478,7 +438,7 @@ app.get("/getphoneslisttest/:symbol", (req, res) => {
           },
           function(err, users) {
             if (err) {
-              // handle error
+              console.log(CSConstants.error, err);
             } else if (users) {
               for (let j = 0; j < users.length; j++) {
                 phones.push(users[j].cellphone);
