@@ -390,7 +390,7 @@ app.get("/validemail/:email", (req, res) => {
 });
 
 app.get("/getphoneslist/:symbol", (req, res) => {
-  let symbol = req.params.symbol;
+  let symbol = req.params.symbol.toUpperCase();
   let phones = [];
   StrategyModel.find({ currencies: { $in: [symbol] } }, (err, strategies) => {
     if (err) {
@@ -420,7 +420,7 @@ app.get("/getphoneslist/:symbol", (req, res) => {
 });
 
 app.get("/getphoneslisttest/:symbol", (req, res) => {
-  let symbol = req.params.symbol;
+  let symbol = req.params.symbol.toUpperCase();
   let phones = [];
   TestStrategyModel.find(
     { currencies: { $in: [symbol] } },

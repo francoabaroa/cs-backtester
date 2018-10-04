@@ -84,11 +84,21 @@ API DOCUMENTATION
 --------------------------------------------------------------------------------
 
 
-- GET /getphoneslist/:symbol
+- GET /check/:phone
 
   Example: https://cs-price-alerts.herokuapp.com/check/14157012311
 
   Response: {"valid":true}
+
+
+--------------------------------------------------------------------------------
+
+
+- GET /getphoneslist/:symbol
+
+  Example: https://cs-price-alerts.herokuapp.com/getphoneslist/BTC
+
+{"phonesList":[17864236525,17864236523,17864236522,17864236516,17864236510]}
 
 
 --------------------------------------------------------------------------------
