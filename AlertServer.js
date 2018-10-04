@@ -230,7 +230,8 @@ app.post('/savestrategy', function(req, res) {
 });
 
 app.post('/createuser', function(req, res) {
-  // TODO: restrict endpoint
+  // TODO: restrict appropriately
+  console.log('req create test user', req.body);
   const active = req.body.active;
   const cellphone = req.body.cellphone;
   const email = req.body.email;
@@ -239,29 +240,51 @@ app.post('/createuser', function(req, res) {
   const preferences = req.body.preferences;
   const surveyAnswers = req.body.surveyAnswers;
 
-  UserModel.create({
-    cellphone,
-    active,
-    email,
-    firstName,
-    lastName,
-    passwordHash: null,
-    preferences,
-    settings: [],
-    surveyAnswers,
+  UserModel.findOne({
+    cellphone: cellphone
   }, (err, user) => {
-      if (err) {
-        console.log(CSConstants.error, err);
-      } else {
-        console.log('User created');
-        res.send(user.id);
-      }
+    if (user) {
+      console.log('User exists');
+      user.active = active;
+      user.cellphone = cellphone;
+      user.email = email;
+      user.firstName = firstName;
+      user.lastName = lastName;
+      user.preferences = preferences;
+      user.surveyAnswers = surveyAnswers;
+      user.save();
+      let testObj = {
+        userId: user.id
+      };
+      res.send(testObj);
+    } else {
+      UserModel.create({
+        cellphone,
+        active,
+        email,
+        firstName,
+        lastName,
+        passwordHash: null,
+        preferences,
+        settings: [],
+        surveyAnswers,
+      }, (err, newUser) => {
+          if (err) {
+            console.log(CSConstants.error, err);
+          } else {
+            console.log('User created');
+            let testObj = {
+              userId: newUser.id
+            };
+            res.send(testObj);
+          }
+      });
+    }
   });
 });
 
 app.post('/saveteststrategy', function(req, res) {
   // TODO: restrict appropriately
-  // TODO: new user VS existing user
   const userId = req.body.userId;
   const active = req.body.active;
   const profitTakePercent = req.body.profitTakePercent;
@@ -290,7 +313,6 @@ app.post('/saveteststrategy', function(req, res) {
 
 app.post('/createtestuser', function(req, res) {
   // TODO: restrict appropriately
-  // TODO: validation on cellphone
   console.log('req create test user', req.body);
   const active = req.body.active;
   const cellphone = req.body.cellphone;
@@ -300,63 +322,47 @@ app.post('/createtestuser', function(req, res) {
   const preferences = req.body.preferences;
   const surveyAnswers = req.body.surveyAnswers;
 
-  /*
-
-  PriceAlertModel.findOne({
-    _id: {
-        symbol: `${symbol}`,
-        startTime,
-    }
-  }, (err, alert) => {
-    if (alert) {
-      console.log(symbol + startTime + CSConstants.alertExists);
+  TestUserModel.findOne({
+    cellphone: cellphone
+  }, (err, user) => {
+    if (user) {
+      console.log('User exists');
+      user.active = active;
+      user.cellphone = cellphone;
+      user.email = email;
+      user.firstName = firstName;
+      user.lastName = lastName;
+      user.preferences = preferences;
+      user.surveyAnswers = surveyAnswers;
+      user.save();
+      let testObj = {
+        userId: user.id
+        existing: true,
+      };
+      res.send(testObj);
     } else {
-      PriceAlertModel.create({
-        _id: {
-          symbol: `${symbol}`,
-          startTime,
-        },
-        history: historicalData,
-        hoursOfDataStored: hoursOfDataStored,
-        symbol: symbol,
-        startTime: startTime,
-        storedDataApiUrl: null,
-        alertId: alertId,
-        btcPriceAtAlertTime: 0,
-        usdPriceAtAlertTime: 0,
-      }, (err, alert) => {
+      TestUserModel.create({
+        cellphone,
+        active,
+        email,
+        firstName,
+        lastName,
+        passwordHash: null,
+        preferences,
+        settings: [],
+        surveyAnswers,
+      }, (err, newUser) => {
           if (err) {
             console.log(CSConstants.error, err);
           } else {
-            successfullyCreated++;
-            console.log(CSConstants.numOfRecordsSaved + successfullyCreated);
+            console.log('User created');
+            let testObj = {
+              userId: newUser.id
+            };
+            res.send(testObj);
           }
       });
     }
-  });
-
-  */
-
-  TestUserModel.create({
-    cellphone,
-    active,
-    email,
-    firstName,
-    lastName,
-    passwordHash: null,
-    preferences,
-    settings: [],
-    surveyAnswers,
-  }, (err, user) => {
-      if (err) {
-        console.log(CSConstants.error, err);
-      } else {
-        console.log('User created');
-        let testObj = {
-          userId: user.id
-        };
-        res.send(testObj);
-      }
   });
 });
 
@@ -376,7 +382,7 @@ app.get('/getphoneslist/:symbol', (req, res) => {
       for (let i = 0; i < strategies.length; i++) {
         userIds.push(mongoose.Types.ObjectId(strategies[i].userId));
       }
-      TestUserModel.find({
+      UserModel.find({
         '_id': { $in: userIds}
       }, function(err, users){
         if (err) {
