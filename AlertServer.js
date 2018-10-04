@@ -27,8 +27,8 @@ function verify(phoneNumber) {
 }
 
 const app = express();
-app.use(cors());
 app.use(bodyParser.json())
+app.use(cors());
 
 mongoose.Promise = Promise;
 mongoose.connect(
@@ -313,7 +313,7 @@ app.post('/saveteststrategy', function(req, res) {
 
 app.post('/createtestuser', function(req, res) {
   // TODO: restrict appropriately
-  console.log('req create test user!', req.body);
+  console.log('req create test user', req.body);
   const active = req.body.active;
   const cellphone = req.body.cellphone;
   const email = req.body.email;
